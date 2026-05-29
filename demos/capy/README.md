@@ -1,18 +1,22 @@
-# Capy demos
+# `.window` app demos
 
-Each `*.window` file is a complete `window` app written in the Capy app
-language defined by [`assets/window.capy`](../../assets/window.capy). Run any
-of them with:
+Each `*.window` file is a complete app written in **window's own declarative
+app language**. Run any of them directly:
 
 ```sh
-window --capy demos/capy/counter.window
+window demos/capy/counter.window
 ```
 
-`--capy` compiles the embedded `window.capy` library, runs your source
-through it (generating `window.yaml` + `static/index.html` + `static/app.js`),
-and opens the result — all in one binary. **There is no separate backend
-process:** `BACKEND.call(...)` is served by in-process Go handlers built into
-`window` (see [`infra/handlers.go`](../../infra/handlers.go)).
+`window` recognizes the `.window` extension, transpiles the source to a full
+app (`window.yaml` + `static/index.html` + `static/app.js`), and opens it —
+all in one binary. The transpiler under the hood is the
+[Capy](https://github.com/luowensheng/capy) engine, driven by the language
+definition in [`assets/window.capy`](../../assets/window.capy); you never
+invoke it directly.
+
+**There is no separate backend process:** `BACKEND.call(...)` is served by
+in-process Go handlers built into `window`
+(see [`infra/handlers.go`](../../infra/handlers.go)).
 
 ## What each demo shows
 

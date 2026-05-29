@@ -222,7 +222,7 @@
     <div class="grp">Start here</div>
     <a href="#build">What you can build</a>
     <a href="#demos">Sample demos</a>
-    <a href="#capy">Build with Capy</a>
+    <a href="#capy">.window language</a>
     <a href="#start">Quick start</a>
     <a href="#builder">Config builder</a>
     <div class="grp">Device capabilities</div>
@@ -526,17 +526,19 @@ then opens it in a native window. Your app is untouched.</code></pre></div>
 
     <!-- CAPY -->
     <section id="capy">
-      <div class="eyebrow">build with capy</div>
-      <h2>Write a whole app in one tiny language</h2>
-      <p class="lead-p">Describe an app once in the <a href="https://github.com/luowensheng/capy">Capy</a>
-        app language; <code>window --capy</code> generates the UI <em>and</em> the
-        <code>window.yaml</code>, then runs it. Backend calls are served <strong>in-process</strong>
-        by Go handlers built into the binary — no Python, no Node, no socket, no sidecar.</p>
+      <div class="eyebrow">the .window app language</div>
+      <h2>Write a whole app in one tiny file</h2>
+      <p class="lead-p">window has its own declarative app language — a <code>.window</code> file.
+        Run it with <code>window app.window</code>: it transpiles to the UI <em>and</em> the
+        <code>window.yaml</code>, then opens. (The transpiler under the hood is the
+        <a href="https://github.com/luowensheng/capy">Capy</a> engine — you never see it.) Backend
+        calls are served <strong>in-process</strong> by Go handlers built into the binary — no
+        Python, no Node, no socket, no sidecar.</p>
 
       <div class="demo">
-        <div class="dh"><div class="ev">one source · one binary</div><b>🔢 Counter, in 11 lines</b>
+        <div class="dh"><div class="ev">one source · one binary</div><b>🔢 counter.window — 11 lines</b>
           <p>State, events and reactive bindings — projected into a full app.</p>
-          <span class="tag">capy</span><span class="tag">no backend</span></div>
+          <span class="tag">.window</span><span class="tag">no backend</span></div>
         <div class="dgrid">
           <div class="dcol">
             <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>counter.window</div>
@@ -562,7 +564,7 @@ const ACTIONS = {
 document.querySelector("#inc")
   .addEventListener("click", () =&gt; ACTIONS.up());
 render();</code></pre></div>
-            <div class="out"><span class="lbl">Run it</span><pre><code>window --capy demos/capy/counter.window</code></pre></div>
+            <div class="out"><span class="lbl">Run it</span><pre><code>window demos/capy/counter.window</code></pre></div>
           </div>
         </div>
       </div>
@@ -576,7 +578,7 @@ send calc math into result args { a: state.a, b: state.b, op: 'add' }</code></pr
         <code>uuid</code>, <code>sysinfo</code>, <code>reverse</code>, <code>store.*</code>,
         <code>http.get</code>, <code>echo</code> — add more in <code>infra/handlers.go</code>.</p>
 
-      <h3 style="margin-top:26px">34 ready-made Capy demos</h3>
+      <h3 style="margin-top:26px">34 ready-made .window demos</h3>
       <div class="build-grid">
         <div class="build-card"><div class="bi">🧮</div><b>Logic &amp; state</b><p>counter · todo · tip calculator · BMI · stopwatch · countdown · star rating</p></div>
         <div class="build-card"><div class="bi">⚙️</div><b>In-process backend</b><p>clock · calculator · dice · coin flip · random · guess · text reverser</p></div>

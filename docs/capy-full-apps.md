@@ -113,8 +113,7 @@ end
 Run any app:
 
 ```sh
-capy run window.capy app.window     # writes window.yaml + static/* (+ app_handlers.go)
-window window.yaml                    # opens the native app
+window app.window     # `.window` is a built-in filetype: transpile + run, one binary
 ```
 
 ---

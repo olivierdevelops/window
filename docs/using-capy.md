@@ -23,7 +23,7 @@
 6. [State management](#6-state-management)
 7. [When you need real backend logic — in-process Go](#7-when-you-need-real-backend-logic-in-process-go)
 8. [A complete worked example](#8-a-complete-worked-example)
-9. [Embedding the generator (`window --capy`)](#9-embedding-the-generator-window---capy)
+9. [How `.window` files run](#9-how-window-files-run-the-transpiler-is-built-in)
 10. [The grammar is the contract](#10-the-grammar-is-the-contract)
 11. [For AI agents](#11-for-ai-agents)
 
@@ -398,34 +398,35 @@ What Capy generates:
   pushes the draft and re-renders the list, and load/save via
   `NATIVE.fs.readFile`/`writeFile` on the given path.
 
-Two commands to run it:
+One command to run it — `.window` is a first-class filetype:
 
 ```sh
-capy run window.capy notes.window
-window window.yaml
+window notes.window
 ```
 
-A persistent note app — UI, events, state, and disk persistence — with one
-binary and no sidecar.
+`window` sees the `.window` extension, transpiles the source (via the
+embedded language definition), and opens the app. A persistent note app — UI,
+events, state, and disk persistence — with one binary and no sidecar.
 
 ---
 
-## 9. Embedding the generator (`window --capy`)
+## 9. How `.window` files run (the transpiler is built in)
 
-To make it one command (and to compile in any Go handlers from §7), embed
-the generator. This respects `window`'s layering: `infra/` owns the
-third-party dependency and file I/O, `appio/` adds the flag.
+`window` ships with the language definition embedded, so `window app.window`
+just works — Capy is the transpiler under the hood and you never invoke it.
+The wiring respects `window`'s layering: `infra/` owns the dependency and the
+codegen, `appio/` dispatches the `.window` extension.
 
 ```go
-// infra/capy_codegen.go
+// infra/capy_codegen.go — infra may import third-party (no domain logic)
 package infra
 
 import "github.com/luowensheng/capy"
 
-// GenerateApp turns one .window source into the app's files
-// (window.yaml, static/*, and app_handlers.go for in-process Go handlers).
-func GenerateApp(libPath, scriptSrc string) (map[string]string, error) {
-	lib, err := capy.NewLibraryFromFile(libPath)
+// GenerateCapyApp runs a .window source through the embedded language
+// definition and returns the app's files (window.yaml, static/*).
+func GenerateCapyApp(librarySrc, scriptSrc string) (map[string]string, error) {
+	lib, err := capy.NewLibrary(librarySrc)
 	if err != nil {
 		return nil, err
 	}
@@ -435,10 +436,14 @@ func GenerateApp(libPath, scriptSrc string) (map[string]string, error) {
 ```
 
 ```go
-// appio/cli.go — add a --capy mode
-//   window --capy window.capy notes.window
-//   → generate the files, compile any app_handlers.go into this process, run window.yaml
+// appio/cli.go — dispatch the .window extension
+//   window notes.window
+//   → transpile to window.yaml + static/*, then run (no sidecar)
 ```
+
+Need real server-side logic? Add a Go handler in the **same process** (see
+§7 and `infra/handlers.go`); the frontend reaches it via `BACKEND.call`,
+dispatched in-process. Capy never generates a separate backend.
 
 `NewLibraryFromFile` compiles the grammar once; `RunMulti` is re-entrant.
 The generated `window.yaml` flows through the existing

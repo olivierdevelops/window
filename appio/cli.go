@@ -61,35 +61,16 @@ func ParseCLI() *domain.AppConfig {
 		}
 		return nil
 
-	case "--capy", "-capy":
+	case "--build", "--capy":
+		// Explicitly transpile a .window source and run it. The bare form
+		// `window app.window` (handled below by extension) does the same.
 		if len(os.Args) <= 2 {
-			log.Fatal("usage: window --capy <app.window>")
-		}
-		src, err := os.ReadFile(os.Args[2])
-		if err != nil {
-			log.Fatal(err)
-		}
-		files, err := infra.GenerateCapyApp(string(assets.WindowCapyLib), string(src))
-		if err != nil {
-			log.Fatalf("capy: %v", err)
-		}
-		dir, err := os.MkdirTemp("", "capyapp_*")
-		if err != nil {
-			log.Fatal(err)
-		}
-		for rel, content := range files {
-			full := filepath.Join(dir, rel)
-			if err := os.MkdirAll(filepath.Dir(full), 0755); err != nil {
-				log.Fatal(err)
-			}
-			if err := os.WriteFile(full, []byte(content), 0644); err != nil {
-				log.Fatal(err)
-			}
+			log.Fatal("usage: window <app.window>")
 		}
 		if os.Getenv("DEBUG") != "1" {
 			log.SetOutput(&noLog{})
 		}
-		cfg, err := LoadApp(filepath.Join(dir, "window.yaml"), false)
+		cfg, err := loadWindowLang(os.Args[2])
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -109,6 +90,8 @@ func ParseCLI() *domain.AppConfig {
 		cfg, err = LoadApp(configPath, false)
 	case ".json":
 		cfg, err = LoadApp(configPath, true)
+	case ".window":
+		cfg, err = loadWindowLang(configPath)
 	default:
 		cfg, err = LoadAppForContentView(configPath)
 	}
@@ -117,6 +100,35 @@ func ParseCLI() *domain.AppConfig {
 		log.Fatal(err)
 	}
 	return cfg
+}
+
+// loadWindowLang transpiles a .window source — window's own declarative app
+// language — into a runnable app and returns its config. The Capy engine is
+// the transpiler under the hood; the embedded window.capy library defines the
+// language. Generated files (window.yaml + static/*) go to a temp dir.
+func loadWindowLang(scriptPath string) (*domain.AppConfig, error) {
+	src, err := os.ReadFile(scriptPath)
+	if err != nil {
+		return nil, err
+	}
+	files, err := infra.GenerateCapyApp(string(assets.WindowCapyLib), string(src))
+	if err != nil {
+		return nil, fmt.Errorf("transpile %s: %w", scriptPath, err)
+	}
+	dir, err := os.MkdirTemp("", "winapp_*")
+	if err != nil {
+		return nil, err
+	}
+	for rel, content := range files {
+		full := filepath.Join(dir, rel)
+		if err := os.MkdirAll(filepath.Dir(full), 0755); err != nil {
+			return nil, err
+		}
+		if err := os.WriteFile(full, []byte(content), 0644); err != nil {
+			return nil, err
+		}
+	}
+	return LoadApp(filepath.Join(dir, "window.yaml"), false)
 }
 
 type noLog struct{}
