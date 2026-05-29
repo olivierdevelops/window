@@ -1,0 +1,8 @@
+app "Random Number" 340 220
+    heading "Random 0–100"
+    text r.int
+    button "Generate" id b
+    state r = {}
+    on "#b" click do roll
+    send roll random into r args { max: 100 }
+end

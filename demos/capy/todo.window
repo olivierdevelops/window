@@ -1,0 +1,9 @@
+app "Todo List" 420 560
+    heading "Todo"
+    field draft placeholder "New task…"
+    button "Add" id add
+    list items
+    state items = []
+    on "#add" click do additem
+    action additem set items = [...state.items, document.getElementById('draft').value]
+end

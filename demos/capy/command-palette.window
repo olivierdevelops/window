@@ -1,0 +1,5 @@
+app "Command Palette" 480 320
+    heading "Command Palette"
+    paragraph "Press Ctrl+K (Cmd+K on macOS). Esc closes."
+    palette "ctrl+k"
+end

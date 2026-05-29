@@ -1,0 +1,9 @@
+app "Dictation" 480 380
+    heading "🗣 Dictation"
+    paragraph "Speak to transcribe; read it back aloud."
+    dictate notes
+    speak notes
+    subhead "Transcript"
+    text notes
+    state notes = ""
+end

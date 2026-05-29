@@ -1,0 +1,10 @@
+app "Brand Theme" 360 260
+    theme "#e11d48"
+    heading "Custom Theme"
+    paragraph "The accent color is set with one line."
+    button "Click me" id b
+    text clicks
+    state clicks = 0
+    on "#b" click do up
+    action up set clicks = state.clicks + 1
+end

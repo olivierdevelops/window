@@ -1,0 +1,9 @@
+app "UUID Generator" 420 200
+    heading "UUID v4"
+    text id.value
+    button "New UUID" id g
+    state id = {}
+    on "#g" click do gen
+    get gen uuid into id
+    start gen
+end

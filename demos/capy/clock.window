@@ -1,0 +1,9 @@
+app "Clock" 320 180
+    heading "Live Clock"
+    text now.time
+    text now.date
+    state now = {}
+    get tick time into now
+    start tick
+    every tick 1000
+end

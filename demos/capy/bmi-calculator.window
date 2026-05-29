@@ -1,0 +1,10 @@
+app "BMI Calculator" 380 320
+    heading "BMI"
+    field w placeholder "Weight (kg)"
+    field h placeholder "Height (cm)"
+    button "Compute" id go
+    text bmi
+    state bmi = 0
+    on "#go" click do calc
+    action calc set bmi = ((Number(document.getElementById('w').value)||0) / Math.pow((Number(document.getElementById('h').value)||1)/100, 2)).toFixed(1)
+end

@@ -1,0 +1,9 @@
+app "Word Counter" 440 300
+    heading "Word Counter"
+    field t placeholder "Type here…"
+    subhead "Words"
+    text count
+    state count = 0
+    on "#t" input do recount
+    action recount set count = (document.getElementById('t').value.match(/\S+/g) || []).length
+end

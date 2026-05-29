@@ -1,0 +1,5 @@
+app "Photo Booth" 560 620
+    heading "📸 Photo Booth"
+    paragraph "Live webcam preview, capture to a still."
+    photobooth
+end

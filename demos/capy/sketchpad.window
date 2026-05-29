@@ -1,0 +1,5 @@
+app "Sketchpad" 520 460
+    heading "Sketchpad"
+    paragraph "Drag to draw on the native canvas."
+    sketch pad
+end

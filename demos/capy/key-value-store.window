@@ -1,0 +1,14 @@
+app "Key-Value Store" 440 320
+    heading "In-Process KV Store"
+    field k placeholder "key"
+    field v placeholder "value"
+    button "Set" id sset
+    button "Get" id sget
+    subhead "Value"
+    text got.value
+    state got = {}
+    on "#sset" click do doset
+    on "#sget" click do doget
+    send doset store.set into got args { key: document.getElementById('k').value, value: document.getElementById('v').value }
+    send doget store.get into got args { key: document.getElementById('k').value }
+end

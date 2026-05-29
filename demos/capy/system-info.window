@@ -1,0 +1,14 @@
+app "System Info" 400 320
+    heading "System Info"
+    subhead "OS"
+    text info.os
+    subhead "Arch"
+    text info.arch
+    subhead "CPUs"
+    text info.cpus
+    button "Refresh" id b
+    state info = {}
+    on "#b" click do load
+    get load sysinfo into info
+    start load
+end

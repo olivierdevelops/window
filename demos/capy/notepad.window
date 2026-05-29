@@ -1,0 +1,5 @@
+app "Notepad" 560 500
+    heading "Notepad"
+    paragraph "Autoloads and saves /tmp/capy-note.txt"
+    notepad "/tmp/capy-note.txt"
+end

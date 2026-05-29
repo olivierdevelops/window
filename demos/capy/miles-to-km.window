@@ -1,0 +1,9 @@
+app "Miles to Km" 360 260
+    heading "Miles to Km"
+    field mi placeholder "Miles"
+    button "Convert" id b
+    text km
+    state km = 0
+    on "#b" click do conv
+    action conv set km = ((Number(document.getElementById('mi').value)||0) * 1.60934).toFixed(2)
+end

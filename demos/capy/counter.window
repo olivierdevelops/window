@@ -1,0 +1,11 @@
+app "Counter" 320 240
+    heading "Counter"
+    text count
+    button "−" id dec
+    button "+" id inc
+    state count = 0
+    on "#inc" click do up
+    on "#dec" click do down
+    action up set count = state.count + 1
+    action down set count = state.count - 1
+end

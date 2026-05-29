@@ -1,0 +1,5 @@
+app "Chart Dashboard" 660 480
+    heading "📊 Dashboard"
+    paragraph "Chart.js injected from a CDN — no build step."
+    chart series
+end

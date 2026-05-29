@@ -1,0 +1,5 @@
+app "Voice Recorder" 400 260
+    heading "🎙 Voice Recorder"
+    paragraph "Record audio and play it back."
+    recorder
+end

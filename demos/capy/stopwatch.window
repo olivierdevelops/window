@@ -1,0 +1,14 @@
+app "Stopwatch" 320 240
+    heading "Stopwatch"
+    text secs
+    button "Start/Stop" id s
+    button "Reset" id r
+    state secs = 0
+    state running = false
+    on "#s" click do toggle
+    on "#r" click do reset
+    action toggle set running = !state.running
+    action reset set secs = 0
+    every tickfn 1000
+    action tickfn set secs = state.running ? state.secs + 1 : state.secs
+end

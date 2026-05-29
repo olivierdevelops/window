@@ -1,0 +1,10 @@
+app "Coin Flip" 320 220
+    heading "Coin Flip"
+    text result
+    button "Flip" id b
+    state coin = {}
+    state result = ""
+    on "#b" click do flip
+    send flip random into coin args { max: 1 }
+    action result set result = (state.coin.int === 1) ? 'Heads' : 'Tails'
+end

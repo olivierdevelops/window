@@ -40,3 +40,6 @@ var NativeScreenJS []byte
 
 //go:embed native_input.js
 var NativeInputJS []byte
+
+//go:embed window.capy
+var WindowCapyLib []byte

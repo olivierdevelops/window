@@ -1,0 +1,8 @@
+app "File Picker" 440 220
+    heading "Open a File"
+    paragraph "Uses the native OS open dialog."
+    filepicker chosen
+    subhead "Chosen path"
+    text chosen
+    state chosen = ""
+end

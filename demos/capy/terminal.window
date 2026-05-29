@@ -1,0 +1,5 @@
+app "Terminal" 640 480
+    heading "⌨️ Terminal"
+    paragraph "Run shell commands via the native OS feature."
+    runner
+end

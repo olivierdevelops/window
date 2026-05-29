@@ -60,6 +60,40 @@ func ParseCLI() *domain.AppConfig {
 			log.Fatal(err)
 		}
 		return nil
+
+	case "--capy", "-capy":
+		if len(os.Args) <= 2 {
+			log.Fatal("usage: window --capy <app.window>")
+		}
+		src, err := os.ReadFile(os.Args[2])
+		if err != nil {
+			log.Fatal(err)
+		}
+		files, err := infra.GenerateCapyApp(string(assets.WindowCapyLib), string(src))
+		if err != nil {
+			log.Fatalf("capy: %v", err)
+		}
+		dir, err := os.MkdirTemp("", "capyapp_*")
+		if err != nil {
+			log.Fatal(err)
+		}
+		for rel, content := range files {
+			full := filepath.Join(dir, rel)
+			if err := os.MkdirAll(filepath.Dir(full), 0755); err != nil {
+				log.Fatal(err)
+			}
+			if err := os.WriteFile(full, []byte(content), 0644); err != nil {
+				log.Fatal(err)
+			}
+		}
+		if os.Getenv("DEBUG") != "1" {
+			log.SetOutput(&noLog{})
+		}
+		cfg, err := LoadApp(filepath.Join(dir, "window.yaml"), false)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return cfg
 	}
 
 	if os.Getenv("DEBUG") != "1" {

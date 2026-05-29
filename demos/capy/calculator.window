@@ -1,0 +1,17 @@
+app "Calculator" 360 360
+    heading "Calculator"
+    field a placeholder "a"
+    field b placeholder "b"
+    button "Add" id add
+    button "Multiply" id mul
+    button "Power" id pow
+    subhead "Result"
+    text r.value
+    state r = {}
+    on "#add" click do doadd
+    on "#mul" click do domul
+    on "#pow" click do dopow
+    send doadd math into r args { a: Number(document.getElementById('a').value), b: Number(document.getElementById('b').value), op: 'add' }
+    send domul math into r args { a: Number(document.getElementById('a').value), b: Number(document.getElementById('b').value), op: 'mul' }
+    send dopow math into r args { a: Number(document.getElementById('a').value), b: Number(document.getElementById('b').value), op: 'pow' }
+end

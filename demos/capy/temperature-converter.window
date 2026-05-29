@@ -1,0 +1,10 @@
+app "Temp Converter" 360 280
+    heading "Celsius to Fahrenheit"
+    field c placeholder "Celsius"
+    button "Convert" id go
+    subhead "Fahrenheit"
+    text f
+    state f = 0
+    on "#go" click do conv
+    action conv set f = (Number(document.getElementById('c').value)||0) * 9/5 + 32
+end

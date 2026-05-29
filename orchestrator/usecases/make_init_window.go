@@ -6,6 +6,7 @@ import (
 	"webview_gui/assets"
 	"webview_gui/domain"
 	"webview_gui/features"
+	"webview_gui/infra"
 	orchfeatures "webview_gui/orchestrator/features"
 )
 
@@ -32,7 +33,16 @@ func MakeInitWindow(win features.Windowing, bridge features.BackendBridge) func(
 		}
 
 		if cfg.RunBackendScript == "" {
-			return nil
+			// No subprocess backend: serve BACKEND.call() from in-process Go
+			// handlers — minimal management, one binary, no socket.
+			reg := infra.BuiltinHandlers()
+			return win.Bind(h, "__CALL_BACKEND", func(functionName string, data map[string]any) map[string]any {
+				result, err := reg.Dispatch(functionName, data)
+				if err != nil {
+					return map[string]any{"err": err.Error()}
+				}
+				return map[string]any{"result": result}
+			})
 		}
 
 		bridge.OnServerPush(func(msg *domain.Message) {

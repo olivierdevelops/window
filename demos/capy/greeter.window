@@ -1,0 +1,9 @@
+app "Greeter" 360 240
+    heading "Greeter"
+    field name placeholder "Your name"
+    button "Greet" id g
+    text msg
+    state msg = ""
+    on "#g" click do greet
+    action greet set msg = 'Hello, ' + (document.getElementById('name').value || 'World') + '!'
+end

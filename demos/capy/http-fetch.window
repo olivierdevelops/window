@@ -1,0 +1,11 @@
+app "HTTP Fetch" 560 460
+    heading "HTTP Fetch (in-process)"
+    paragraph "Fetched by Go — no browser CORS limits."
+    field url placeholder "https://api.github.com/zen"
+    button "GET" id b
+    subhead "Response"
+    text resp.body
+    state resp = {}
+    on "#b" click do go
+    send go http.get into resp args { url: document.getElementById('url').value }
+end

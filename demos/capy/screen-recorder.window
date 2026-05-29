@@ -1,0 +1,5 @@
+app "Screen Recorder" 400 240
+    heading "🖥 Screen Recorder"
+    paragraph "Pick a screen, record, download the clip."
+    screencast
+end

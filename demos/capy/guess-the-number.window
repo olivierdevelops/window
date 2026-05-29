@@ -1,0 +1,14 @@
+app "Guess the Number" 380 320
+    heading "Guess 1–10"
+    field g placeholder "Your guess"
+    button "Check" id b
+    button "New game" id n
+    text msg
+    state target = {}
+    state msg = ""
+    on "#b" click do check
+    on "#n" click do newgame
+    action check set msg = (Number(document.getElementById('g').value) === (state.target.int || 0)) ? 'Correct!' : 'Try again'
+    send newgame random into target args { max: 10 }
+    start newgame
+end

@@ -1,0 +1,8 @@
+app "Dice Roller" 320 240
+    heading "Dice"
+    text roll.int
+    button "Roll" id b
+    state roll = {}
+    on "#b" click do doroll
+    send doroll random into roll args { max: 6 }
+end

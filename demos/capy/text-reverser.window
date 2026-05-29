@@ -1,0 +1,9 @@
+app "Text Reverser" 400 260
+    heading "Reverser"
+    field t placeholder "Type text"
+    button "Reverse" id b
+    text out.value
+    state out = {}
+    on "#b" click do rev
+    send rev reverse into out args { text: document.getElementById('t').value }
+end

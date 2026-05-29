@@ -1,0 +1,11 @@
+app "Star Rating" 320 220
+    heading "Rate it"
+    text stars
+    button "Add star" id up
+    button "Clear" id clr
+    state stars = ""
+    on "#up" click do addstar
+    on "#clr" click do clear
+    action addstar set stars = state.stars + '★'
+    action clear set stars = ''
+end

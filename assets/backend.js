@@ -30,14 +30,22 @@ class Backend {
     call(name, params, onReply) {
         return new Promise(async (resolve, reject) => {
          try {
-            const {eventId, err} = await __CALL_BACKEND(name, params || {});
-            console.log("CREATE EVENT: OUTPUT:", {name, eventId, err}, `eventId=${eventId}\nerr=${err}`)
+            const {eventId, err, result} = await __CALL_BACKEND(name, params || {});
             if (err) {
                 onReply(null, err);
+                resolve();
                 return
             }
 
-            // this.onEvent(eventId, onReply)
+            // In-process Go handler: result is returned synchronously, no
+            // streaming event. Resolve immediately (avoids the listener race).
+            if (typeof result !== "undefined") {
+                onReply({data: result});
+                resolve();
+                return
+            }
+
+            // Subprocess/socket backend: replies stream in as events keyed by eventId.
             window.addEventListener(eventId, ({detail})=>{
                 const {name, code, eventId, data, function: functionName, done} = detail;
                 if (code == "eval") {

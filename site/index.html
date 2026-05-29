@@ -222,6 +222,7 @@
     <div class="grp">Start here</div>
     <a href="#build">What you can build</a>
     <a href="#demos">Sample demos</a>
+    <a href="#capy">Build with Capy</a>
     <a href="#start">Quick start</a>
     <a href="#builder">Config builder</a>
     <div class="grp">Device capabilities</div>
@@ -521,6 +522,72 @@ then opens it in a native window. Your app is untouched.</code></pre></div>
 
       <p style="margin-top:6px">All demos live in the repo under <code>demos/</code> —
         <a href="https://github.com/luowensheng/window/blob/main/docs/demos.md">browse them →</a></p>
+    </section>
+
+    <!-- CAPY -->
+    <section id="capy">
+      <div class="eyebrow">build with capy</div>
+      <h2>Write a whole app in one tiny language</h2>
+      <p class="lead-p">Describe an app once in the <a href="https://github.com/luowensheng/capy">Capy</a>
+        app language; <code>window --capy</code> generates the UI <em>and</em> the
+        <code>window.yaml</code>, then runs it. Backend calls are served <strong>in-process</strong>
+        by Go handlers built into the binary — no Python, no Node, no socket, no sidecar.</p>
+
+      <div class="demo">
+        <div class="dh"><div class="ev">one source · one binary</div><b>🔢 Counter, in 11 lines</b>
+          <p>State, events and reactive bindings — projected into a full app.</p>
+          <span class="tag">capy</span><span class="tag">no backend</span></div>
+        <div class="dgrid">
+          <div class="dcol">
+            <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>counter.window</div>
+<pre><code>app "Counter" 320 240
+    heading "Counter"
+    text count
+    button "−" id dec
+    button "+" id inc
+    state count = 0
+    on "#inc" click do up
+    on "#dec" click do down
+    action up   set count = state.count + 1
+    action down set count = state.count - 1
+end</code></pre></div>
+          </div>
+          <div class="dcol">
+            <div class="code"><div class="cap"><span class="d" style="background:#3fb950"></span>generated app.js (excerpt)</div>
+<pre><code>const state = { count: 0 };
+const ACTIONS = {
+  up:   () =&gt; setState({ count: state.count + 1 }),
+  down: () =&gt; setState({ count: state.count - 1 }),
+};
+document.querySelector("#inc")
+  .addEventListener("click", () =&gt; ACTIONS.up());
+render();</code></pre></div>
+            <div class="out"><span class="lbl">Run it</span><pre><code>window --capy demos/capy/counter.window</code></pre></div>
+          </div>
+        </div>
+      </div>
+
+      <p>Need real backend logic? Call an <strong>in-process Go handler</strong> — already compiled
+        into <code>window</code>, no extra process:</p>
+      <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>in a .window source</div>
+<pre><code>get tick time into clock                 # → BACKEND.call("time")  (in-process)
+send calc math into result args { a: state.a, b: state.b, op: 'add' }</code></pre></div>
+      <p class="hint">Built-in handlers: <code>time</code>, <code>math</code>, <code>random</code>,
+        <code>uuid</code>, <code>sysinfo</code>, <code>reverse</code>, <code>store.*</code>,
+        <code>http.get</code>, <code>echo</code> — add more in <code>infra/handlers.go</code>.</p>
+
+      <h3 style="margin-top:26px">34 ready-made Capy demos</h3>
+      <div class="build-grid">
+        <div class="build-card"><div class="bi">🧮</div><b>Logic &amp; state</b><p>counter · todo · tip calculator · BMI · stopwatch · countdown · star rating</p></div>
+        <div class="build-card"><div class="bi">⚙️</div><b>In-process backend</b><p>clock · calculator · dice · coin flip · random · guess · text reverser</p></div>
+        <div class="build-card"><div class="bi">🔑</div><b>Handlers</b><p>uuid · system info · key-value store · HTTP fetch (no CORS)</p></div>
+        <div class="build-card"><div class="bi">📷</div><b>Devices</b><p>photo booth · voice recorder · dictation · screen recorder</p></div>
+        <div class="build-card"><div class="bi">🛠️</div><b>Native</b><p>terminal · notepad · file picker · command palette · sketchpad</p></div>
+        <div class="build-card"><div class="bi">📊</div><b>Visual</b><p>chart dashboard (Chart.js) · brand theming · word counter · greeter</p></div>
+      </div>
+      <p style="margin-top:6px">All under <code>demos/capy/</code>. Learn the language:
+        <a href="https://github.com/luowensheng/window/blob/main/docs/using-capy.md">using-capy.md</a> ·
+        <a href="https://github.com/luowensheng/window/blob/main/docs/capy-full-apps.md">capy-full-apps.md</a></p>
     </section>
 
     <!-- QUICK START -->

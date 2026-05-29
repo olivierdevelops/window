@@ -1,0 +1,10 @@
+app "Countdown" 320 240
+    heading "Countdown"
+    text n
+    button "Reset to 10" id s
+    state n = 10
+    on "#s" click do reset
+    action reset set n = 10
+    every tickfn 1000
+    action tickfn set n = state.n > 0 ? state.n - 1 : 0
+end

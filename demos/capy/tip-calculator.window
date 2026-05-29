@@ -1,0 +1,11 @@
+app "Tip Calculator" 360 340
+    heading "Tip Calculator"
+    field bill placeholder "Bill amount"
+    field pct placeholder "Tip %"
+    button "Compute" id go
+    subhead "Total"
+    text total
+    state total = 0
+    on "#go" click do calc
+    action calc set total = ((Number(document.getElementById('bill').value)||0) * (1 + (Number(document.getElementById('pct').value)||0)/100)).toFixed(2)
+end
