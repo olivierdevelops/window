@@ -1,0 +1,6 @@
+title: "File Explorer"
+entry_path: ./static/index.html
+static_dirs:
+  "/static": ./static/
+native_features:
+  - fs

@@ -1,0 +1,93 @@
+<style>
+	* {
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+	}
+	
+	.browser-tabs {
+		background: #2d2d2d;
+		padding: 8px;
+		display: flex;
+		gap: 4px;
+		box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+	}
+	
+	.tab {
+		background: #404040;
+		color: white;
+		padding: 8px 16px;
+		border-radius: 4px;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	
+	.tab.active {
+		background: #505050;
+	}
+	
+	.tab-close {
+		cursor: pointer;
+		opacity: 0.7;
+	}
+	
+	.tab-close:hover {
+		opacity: 1;
+	}
+	
+	.new-tab-btn {
+		background: #404040;
+		color: white;
+		padding: 8px 12px;
+		border-radius: 4px;
+		cursor: pointer;
+	}
+</style>
+
+<div class="browser-tabs">
+	<div class="tab active" data-tab="1">
+		<span>Tab 1</span>
+		<span class="tab-close">×</span>
+	</div>
+	<div class="new-tab-btn">+</div>
+</div>
+
+<script data-setup>
+	// Communication with Go backend
+	document.querySelectorAll('.tab').forEach(tab => {
+		tab.addEventListener('click', (e) => {
+			if (e.target.classList.contains('tab-close')) {
+				// Close tab
+				closeTab(tab.dataset.tab);
+			} else {
+				// Switch tab
+				switchTab(tab.dataset.tab);
+			}
+		});
+	});
+	
+	document.querySelector('.new-tab-btn').addEventListener('click', () => {
+		newTab();
+	});
+	
+	function switchTab(tabId) {
+		// Call Go function
+		if (window.switchTab) {
+			window.switchTab(tabId);
+		}
+	}
+	
+	function closeTab(tabId) {
+		if (window.closeTab) {
+			window.closeTab(tabId);
+		}
+	}
+	
+	function newTab() {
+		if (window.newTab) {
+			window.newTab();
+		}
+	}
+</script>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>File Explorer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace;
+      background: #0f0f0f;
+      color: #e8e8e8;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #sidebar {
+      width: 300px;
+      border-right: 1px solid #252525;
+      display: flex;
+      flex-direction: column;
+    }
+    #path-bar {
+      padding: 10px 12px;
+      background: #161616;
+      border-bottom: 1px solid #252525;
+      font-size: 0.75rem;
+      color: #888;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #path-bar input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #e8e8e8;
+      font: inherit;
+      outline: none;
+    }
+    #path-bar button {
+      background: #252525;
+      border: none;
+      color: #888;
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 0.75rem;
+    }
+    #path-bar button:hover { background: #303030; color: #fff; }
+    #file-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+    .entry {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      user-select: none;
+    }
+    .entry:hover { background: #1a1a1a; }
+    .entry.selected { background: #1a1a2e; color: #7c7cff; }
+    .entry .icon { font-size: 1rem; width: 18px; text-align: center; }
+    .entry .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .entry .size { color: #555; font-size: 0.7rem; }
+    #content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #content-header {
+      padding: 10px 16px;
+      background: #161616;
+      border-bottom: 1px solid #252525;
+      font-size: 0.8rem;
+      color: #666;
+    }
+    #content-header span { color: #e8e8e8; }
+    #content-body {
+      flex: 1;
+      overflow: auto;
+      padding: 16px;
+    }
+    pre {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: #c8c8c8;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .placeholder {
+      color: #444;
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: 80px;
+    }
+    .badge {
+      font-size: 0.7rem;
+      background: #1a2a1a;
+      color: #7cffb2;
+      border: 1px solid #2a4a2a;
+      border-radius: 4px;
+      padding: 2px 6px;
+      margin-left: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <div id="path-bar">
+      <span>📁</span>
+      <input id="path-input" value="" placeholder="/path/to/dir">
+      <button onclick="navigate(document.getElementById('path-input').value)">Go</button>
+      <button onclick="navigateUp()">↑</button>
+      <span class="badge">NATIVE.fs</span>
+    </div>
+    <div id="file-list"></div>
+  </div>
+  <div id="content">
+    <div id="content-header">Select a file to preview — <span id="content-name">none</span></div>
+    <div id="content-body"><div class="placeholder">← Select a file from the list</div></div>
+  </div>
+
+  <script>
+    let currentPath = '';
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    async function navigate(path) {
+      try {
+        const entries = await window.NATIVE.fs.readDir(path);
+        currentPath = path;
+        document.getElementById('path-input').value = path;
+        const list = document.getElementById('file-list');
+        list.innerHTML = '';
+        entries.sort((a, b) => {
+          if (a.is_dir !== b.is_dir) return a.is_dir ? -1 : 1;
+          return a.name.localeCompare(b.name);
+        });
+        for (const e of entries) {
+          const div = document.createElement('div');
+          div.className = 'entry';
+          div.innerHTML = `
+            <span class="icon">${e.is_dir ? '📁' : '📄'}</span>
+            <span class="name">${e.name}</span>
+            ${!e.is_dir ? `<span class="size">${formatSize(e.size)}</span>` : ''}
+          `;
+          const fullPath = path.replace(/\/?$/, '/') + e.name;
+          div.onclick = () => {
+            document.querySelectorAll('.entry').forEach(el => el.classList.remove('selected'));
+            div.classList.add('selected');
+            if (e.is_dir) navigate(fullPath);
+            else previewFile(fullPath, e.name);
+          };
+          list.appendChild(div);
+        }
+      } catch (err) {
+        alert('Error: ' + err);
+      }
+    }
+
+    async function previewFile(path, name) {
+      document.getElementById('content-name').textContent = name;
+      const body = document.getElementById('content-body');
+      try {
+        const text = await window.NATIVE.fs.readFile(path);
+        body.innerHTML = '<pre></pre>';
+        body.querySelector('pre').textContent = text.slice(0, 50000);
+      } catch (err) {
+        body.innerHTML = `<div class="placeholder">Cannot preview: ${err}</div>`;
+      }
+    }
+
+    function navigateUp() {
+      const parts = currentPath.replace(/\/$/, '').split('/');
+      parts.pop();
+      navigate(parts.join('/') || '/');
+    }
+
+    document.getElementById('path-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') navigate(e.target.value);
+    });
+
+    function init() {
+      if (!window.NATIVE || !window.NATIVE.fs) {
+        setTimeout(init, 50);
+        return;
+      }
+      const home = navigator.platform.includes('Win') ? 'C:\\Users' : (navigator.platform.includes('Mac') ? '/Users' : '/home');
+      navigate(home);
+    }
+    init();
+  </script>
+</body>
+</html>

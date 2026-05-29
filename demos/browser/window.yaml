@@ -1,0 +1,14 @@
+title: "Counter App"
+
+# entry_path: ./static/index.html
+
+mode: "browser"
+url: https://www.youtube.com/watch?v=0fWHUsUwjMY
+
+static_dirs: 
+  "/static": ./static/
+
+
+inject_html: "./inject/index.html"
+
+# run_backend_script: python3 main.py

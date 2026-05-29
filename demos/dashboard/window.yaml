@@ -1,0 +1,6 @@
+title: "Dashboard"
+entry_path: ./static/index.html
+static_dirs:
+  "/static": ./static/
+js_inject:
+  - "https://cdn.jsdelivr.net/npm/chart.js"

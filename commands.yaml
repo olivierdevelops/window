@@ -1,0 +1,252 @@
+name: Commands
+
+commands:
+
+  build:
+    args:
+      os:
+        type: string
+      arch:
+        type: string
+      output:
+        type: string
+
+    script: |
+        set -e
+        
+        # Set compiler and flags based on target OS
+        {{if eq .os "windows"}}
+        export CC="x86_64-w64-mingw32-gcc"
+        export CXX="x86_64-w64-mingw32-g++"
+        export CGO_CFLAGS="-DWEBVIEW_WINAPI=1"
+        export CGO_LDFLAGS="-lole32 -lcomctl32 -loleaut32 -luuid -lgdi32"
+        {{else if eq .os "darwin"}}
+        export CGO_CFLAGS="-DWEBVIEW_COCOA=1"
+        export CGO_LDFLAGS="-framework WebKit"
+        {{end}}
+        
+        export GOOS="{{.os}}"  
+        export GOARCH="{{.arch}}" 
+        export CGO_ENABLED="1"
+        
+        mkdir -p "$(dirname "{{.output}}")"
+        go build -o "{{.output}}"
+
+  build_windows:
+    script: | 
+      {{Run}} build --os windows --arch amd64 --output "./builds/windows/window.exe"
+
+  build_mac:
+    script: | 
+      set -e
+      {{Run}} build --os darwin --arch arm64 --output "./builds/mac/window"
+      bman remove window || true
+      bman add "./builds/mac/window"
+
+  build_linux:
+    script: |
+      set -e
+      echo "Building Go webview application for Linux..."
+      mkdir -p ./builds/linux
+
+      cat > Dockerfile.builder << 'EOF'
+      FROM golang:1.22-bookworm
+      ENV DEBIAN_FRONTEND=noninteractive
+      RUN apt-get update && \
+          apt-get install -y --no-install-recommends \
+            libgtk-3-dev \
+            libwebkit2gtk-4.0-dev \
+            pkg-config \
+            gcc \
+            g++ && \
+          apt-get clean && \
+          rm -rf /var/lib/apt/lists/*
+      WORKDIR /workspace
+      EOF
+
+      echo "Building builder image..."
+      podman build -t go-webview-builder -f Dockerfile.builder .
+
+      echo "Building application..."
+      podman run --rm \
+        -v "$PWD":/workspace:z \
+        -w /workspace \
+        --memory=4g \
+        --cpus=2 \
+        go-webview-builder \
+        sh -c "CGO_ENABLED=1 GOARCH=amd64 go build -v -o ./builds/linux/window"
+
+      rm Dockerfile.builder
+      echo "Build complete! Binary at: ./builds/linux/window"
+
+  build_linux_remote:
+    args:
+      user:
+        type: string
+        description: Username on target machine
+      ip:
+        type: string
+        description: ip of target machine
+    script: |-
+      #!/bin/bash
+      set -e
+
+      # Configuration
+      REMOTE_HOST="{{.user}}@{{.ip}}"  # Change this to your Linux machine
+      REMOTE_TEMP_DIR="/tmp/go-build-$(date +%s)"
+      LOCAL_BUILD_DIR="./builds/linux"
+
+      echo "Building on remote Linux machine: $REMOTE_HOST"
+
+      # Create local build directory
+      mkdir -p "$LOCAL_BUILD_DIR"
+
+      # Step 1: Copy project files to remote temp directory
+      echo "📤 Copying files to remote machine..."
+      ssh "$REMOTE_HOST" "mkdir -p $REMOTE_TEMP_DIR"
+      rsync -az --exclude='builds/' --exclude='.git/' --exclude='node_modules/' \
+        ./ "$REMOTE_HOST:$REMOTE_TEMP_DIR/"
+
+      # Step 2: Build on remote machine
+      echo "🔨 Building on remote machine..."
+      ssh "$REMOTE_HOST" << EOF
+        set -e
+        cd $REMOTE_TEMP_DIR
+        
+        # Install dependencies if needed
+        if ! dpkg -l | grep -q libgtk-3-dev; then
+          echo "Installing build dependencies..."
+          sudo apt-get update -qq
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev pkg-config
+        fi
+        
+        # Build the application
+        echo "Building application..."
+        CGO_ENABLED=1 go build -v -o window
+        
+        echo "Build complete!"
+      EOF
+
+      # Step 3: Retrieve the binary
+      echo "📥 Retrieving binary..."
+      scp "$REMOTE_HOST:$REMOTE_TEMP_DIR/window" "$LOCAL_BUILD_DIR/window"
+
+      # Step 4: Cleanup remote temp directory
+      echo "🧹 Cleaning up remote directory..."
+      ssh "$REMOTE_HOST" "rm -rf $REMOTE_TEMP_DIR"
+
+      echo "✅ Build complete! Binary available at: $LOCAL_BUILD_DIR/window"
+
+      # Optional: Make it executable
+      chmod +x "$LOCAL_BUILD_DIR/window"
+
+      # Show file info
+      file "$LOCAL_BUILD_DIR/window"
+
+
+  build_linux_native:
+    script: |
+      # Fallback: Try native cross-compilation (requires proper toolchain setup)
+      set -e
+      export CC="x86_64-linux-gnu-gcc"
+      export CXX="x86_64-linux-gnu-g++"
+      export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig"
+      export CGO_ENABLED="1"
+      export GOOS="linux"
+      export GOARCH="amd64"
+      
+      # These need to be installed/configured on macOS
+      export CGO_CFLAGS="$(pkg-config --cflags gtk+-3.0 webkit2gtk-4.0 2>/dev/null || echo '')"
+      export CGO_LDFLAGS="$(pkg-config --libs gtk+-3.0 webkit2gtk-4.0 2>/dev/null || echo '')"
+      
+      mkdir -p ./builds/linux
+      go build -o ./builds/linux/window
+  
+  build_all:
+    script: |
+      echo "Building for all platforms..."
+      {{Run}} build_windows
+      {{Run}} build_mac
+      {{Run}} build_linux_native
+      echo "All builds complete!"
+
+  # Utility commands
+  
+  setup:
+    script: |
+      echo "Setting up cross-compilation environment..."
+      
+      # Check OS
+      if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "macOS detected"
+        
+        # Install mingw-w64 for Windows
+        if ! command -v x86_64-w64-mingw32-gcc &> /dev/null; then
+          echo "Installing mingw-w64..."
+          brew install mingw-w64
+        else
+          echo "✓ mingw-w64 already installed"
+        fi
+        
+        # Check Podman for Linux builds
+        if ! command -v podman &> /dev/null; then
+          echo "⚠ Podman not found. Installing Podman..."
+          brew install podman
+          echo "Initializing Podman machine..."
+          podman machine init
+          podman machine start
+        else
+          echo "✓ Podman already installed"
+          # Make sure podman machine is running
+          if ! podman machine list | grep -q "Currently running"; then
+            echo "Starting Podman machine..."
+            podman machine start
+          fi
+        fi
+        
+        echo ""
+        echo "Setup complete!"
+        echo ""
+        echo "You can now run:"
+        echo "  - Windows builds: brew-installed mingw-w64"
+        echo "  - macOS builds: native (no setup needed)"
+        echo "  - Linux builds: Podman (automatic)"
+        
+      else
+        echo "Not running on macOS. Please install appropriate cross-compilation tools for your platform."
+      fi
+
+  clean:
+    script: |
+      rm -rf ./builds
+      echo "Build artifacts cleaned"
+
+  test_build:
+    script: |
+      echo "Testing build environment..."
+      
+      # Test Windows compiler
+      if command -v x86_64-w64-mingw32-gcc &> /dev/null; then
+        echo "✓ Windows cross-compiler found"
+      else
+        echo "✗ Windows cross-compiler not found (install: brew install mingw-w64)"
+      fi
+      
+      # Test Podman
+      if command -v podman &> /dev/null; then
+        echo "✓ Podman found"
+        if podman machine list | grep -q "Currently running"; then
+          echo "✓ Podman machine is running"
+        else
+          echo "⚠ Podman machine not running (run: podman machine start)"
+        fi
+      else
+        echo "✗ Podman not found (install: brew install podman)"
+      fi
+      
+      # Test native Go
+      if command -v go &> /dev/null; then
+        echo "✓ Go found ($(go version))"
+      else
+        echo "✗ Go not found"
+      fi

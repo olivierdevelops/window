@@ -1,0 +1,139 @@
+
+// type BackendServer struct {
+// 	ln              net.Listener
+// 	cmd             *exec.Cmd
+// 	requestChanel   chan map[string]any
+// 	responseChannel chan map[string]any
+// 	conn            net.Conn
+// 	requests        *sync.Map
+// }
+
+
+// func NewBackendServer(script string) (*BackendServer, error) {
+// 	addr := getOSSpecificAddress()
+
+// 	os.Remove(addr) // remove old socket if exists
+
+// 	ln, err := net.Listen("unix", addr)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer ln.Close()
+
+// 	cmd := getRunScriptCMD(script, nil)
+// 	fmt.Println("ADDR: ", addr)
+// 	cmd.Env = append(cmd.Env, fmt.Sprintf("WINDOW_SOCK_PATH=%s", addr))
+// 	// Set up stdout/stderr for debugging
+// 	cmd.Stdout = os.Stdout
+// 	cmd.Stderr = os.Stderr
+
+// 	rq := sync.Map{}
+
+// 	return &BackendServer{ln: ln, requestChanel: make(chan map[string]any), responseChannel: make(chan map[string]any), requests: &rq, cmd: cmd}, nil
+// }
+
+
+// func (server *BackendServer) HandleRequest(funcName string, data map[string]any, onResponse func(data map[string]any)) (string, error) {
+// 	id := uuid.NewString()
+// 	request := Message{
+// 		ID:       id,
+// 		Data:     data,
+// 		Function: funcName,
+// 		Done:     true,
+// 	}
+
+// 	bytes, err := json.Marshal(request)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	ch := make(chan *Message)
+// 	server.requests.Store(id, ch)
+// 	go func() {
+// 		for message := range ch {
+// 			onResponse(message.Data)
+// 		}
+// 	}()
+// 	bytes = append(bytes, '\n')
+// 	_, err = server.conn.Write(bytes)
+// 	return id, err
+// }
+
+// func setupBackend(script string) (BackendServer, error) {
+
+// 	addr := filepath.Join(os.TempDir(), fmt.Sprintf("echo_%d.sock", os.Getpid()))
+
+// 	os.Remove(addr) // remove old socket if exists
+
+// 	ln, err := net.Listen("unix", addr)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer ln.Close()
+
+// 	cmd := getRunScriptCMD(script, nil)
+// 	cmd.Env = append(cmd.Env, fmt.Sprintf("WINDOW_SOCK_PATH=%s", addr))
+// 	err = cmd.Start()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	fmt.Println("Server listening on", addr)
+
+// }
+
+// func (server *BackendServer) Run(onServer func(message *Message)) error {
+// 	err := server.cmd.Start()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer server.Close()
+// 	conn, err := server.ln.Accept()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	server.conn = conn
+
+// 	go func(c net.Conn) {
+// 		defer c.Close()
+
+// 		reader := bufio.NewReader(c)
+// 		for {
+// 			line, err := reader.ReadString('\n')
+// 			if err != nil {
+// 				log.Println("ERROR: ", err.Error())
+// 				return // EOF or connection error
+// 			}
+
+// 			// line includes '\n'
+// 			message := Message{}
+// 			err = json.Unmarshal([]byte(line), &message)
+// 			if err != nil {
+// 				log.Println("ERROR: ", err.Error())
+// 				continue
+// 			}
+// 			if strings.HasPrefix(message.ID, "server") {
+// 				onServer(&message)
+// 				continue
+// 			}
+
+// 			value, found := server.requests.Load(message.ID)
+// 			if !found {
+// 				log.Println("ERROR: Not found -> ", message.ID)
+// 				continue
+// 			}
+// 			c, ok := value.(chan *Message)
+// 			if !ok {
+// 				log.Println("ERROR:Invalid type -> ", message.ID)
+// 				continue
+// 			}
+// 			c <- &message
+
+// 			if message.Done {
+// 				close(c)
+// 				server.requests.Delete(message.ID)
+// 			}
+
+// 		}
+// 	}(conn)
+// 	return nil
+// }

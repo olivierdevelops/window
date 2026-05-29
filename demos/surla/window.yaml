@@ -1,0 +1,10 @@
+title: "Surla App"
+
+entry_path: ./static/index.html
+
+static_dirs: 
+  "/static": ./static/
+
+
+# run_backend_script: |-
+#   python3 main.py

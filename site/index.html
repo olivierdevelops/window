@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>window — Native desktop apps with any backend</title>
+<meta name="description" content="Build native desktop apps with any language as the backend. Write your UI in HTML/CSS/JS, connect a backend in Python, Go, Rust, or Node.js.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-logo" href="#home">
+    <div class="logo-icon">w</div>
+    <div>
+      <div class="logo-text">window</div>
+      <div class="logo-version">v1.2.0</div>
+    </div>
+  </a>
+  <nav>
+    <a href="#home" class="nav-link active"><span class="nav-icon">⌂</span>Home</a>
+    <a href="#quickstart" class="nav-link"><span class="nav-icon">⚡</span>Quick Start</a>
+    <a href="#demos" class="nav-link"><span class="nav-icon">▶</span>Demos</a>
+    <div class="nav-section">Reference</div>
+    <a href="#modes" class="nav-link"><span class="nav-icon">⊞</span>Run Modes</a>
+    <a href="#configuration" class="nav-link"><span class="nav-icon">⚙</span>Configuration</a>
+    <a href="#cli" class="nav-link"><span class="nav-icon">$</span>CLI</a>
+    <div class="nav-section">Features</div>
+    <a href="#native" class="nav-link"><span class="nav-icon">🖥</span>Native Features</a>
+    <a href="#backend" class="nav-link"><span class="nav-icon">⇄</span>Backend Protocol</a>
+    <a href="#wasm" class="nav-link"><span class="nav-icon">◈</span>WASM Backend</a>
+    <a href="#controlled" class="nav-link"><span class="nav-icon">◎</span>Controlled Mode</a>
+    <div class="nav-section">More</div>
+    <a href="#building" class="nav-link"><span class="nav-icon">⚒</span>Building</a>
+    <a href="https://github.com/luowensheng/window" target="_blank" class="nav-link"><span class="nav-icon">↗</span>GitHub</a>
+  </nav>
+</aside>
+
+<div class="layout">
+  <div class="content">
+
+    <!-- Mobile header -->
+    <header class="mobile-header">
+      <button class="hamburger" onclick="openSidebar()">☰</button>
+      <span class="mobile-logo">window</span>
+      <span></span>
+    </header>
+
+    <!-- ── Hero ───────────────────────────────────────────────────────── -->
+    <div class="hero" id="home">
+      <div class="hero-badge">v1.2.0 — stable</div>
+      <h1>Native desktop apps<br>with any backend</h1>
+      <p class="hero-sub">
+        Write your UI in HTML/CSS/JS. Connect a backend in Python, Go, Rust, Node.js,
+        or any language over a simple socket protocol. Or ship a WebAssembly module —
+        zero runtime dependencies.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#quickstart">Get started →</a>
+        <a class="btn btn-secondary" href="https://github.com/luowensheng/window" target="_blank">GitHub ↗</a>
+      </div>
+      <div class="hero-snippet">
+        <div class="snippet-card">
+          <div class="snippet-card-header">window.yaml</div>
+<pre><code class="language-yaml">title: "My App"
+entry_path: ./static/index.html
+static_dirs:
+  "/static": ./static/
+run_backend_script: python3 main.py</code></pre>
+        </div>
+        <div class="snippet-card">
+          <div class="snippet-card-header">main.py</div>
+<pre><code class="language-python">from client import App, ResponseWriter
+import asyncio
+
+app = App()
+
+@app.handle("greet")
+async def greet(req, rw):
+    await rw.send({"msg": f"Hello, {req['name']}!"})
+
+asyncio.run(app.run())</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Features overview ──────────────────────────────────────────── -->
+    <section id="features" style="padding-top:48px;padding-bottom:40px">
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="fc-icon">🌐</div>
+          <h4>Any Language</h4>
+          <p>Connect backends in Python, Node.js, Rust, Go — any language that can write JSON to a socket.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">🖥</div>
+          <h4>Native Capabilities</h4>
+          <p>File system, OS exec, native dialogs, and canvas — no backend process needed.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">◈</div>
+          <h4>WASM Backend</h4>
+          <p>Compile your backend to WebAssembly. Single binary, no subprocess, no socket.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">📦</div>
+          <h4>JS Injection</h4>
+          <p>Load Chart.js, Three.js, or any CDN library — no HTML changes needed.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">◎</div>
+          <h4>Controlled Mode</h4>
+          <p>Let your backend open, navigate, eval JS in, and close windows programmatically.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">🍎</div>
+          <h4>macOS .app Bundles</h4>
+          <p>Package for distribution with <code>window --mac-app</code>. No Go toolchain on target.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Quick Start ────────────────────────────────────────────────── -->
+    <section id="quickstart">
+      <h2><div class="section-icon">⚡</div>Quick Start</h2>
+      <p class="lead">Get a window running in under a minute.</p>
+
+      <h3>1. Build the binary</h3>
+      <p>Requires Go 1.21+ and a C compiler (CGo). See <a href="#building">Building from Source</a> for platform deps.</p>
+<pre><code class="language-bash">git clone https://github.com/luowensheng/window
+cd window
+go build -o window .
+# Optional: put it on your PATH
+mv window /usr/local/bin/window</code></pre>
+
+      <h3>2. Scaffold a new project</h3>
+<pre><code class="language-bash">window --init myapp
+cd myapp</code></pre>
+      <p>Creates <code>window.yaml</code> and <code>static/index.html</code>.</p>
+
+      <h3>3. Run it</h3>
+<pre><code class="language-bash">window window.yaml</code></pre>
+
+      <h3>Try a demo</h3>
+<pre><code class="language-bash">window demos/hello/window.yaml        # static HTML
+window demos/dashboard/window.yaml    # Chart.js via js_inject
+window demos/file_explorer/window.yaml # native file system
+window demos/terminal/window.yaml     # native OS exec
+window demos/counter/window.yaml      # Python backend</code></pre>
+
+      <div class="callout">
+        <span class="ci">💡</span>
+        <span>Set <code>DEV_MODE=1</code> to start the HTTP server without opening a native window — useful for testing the backend from a browser.</span>
+      </div>
+    </section>
+
+    <!-- ── Demos ──────────────────────────────────────────────────────── -->
+    <section id="demos">
+      <h2><div class="section-icon">▶</div>Demos</h2>
+      <p class="lead">Run any demo with <code>window demos/&lt;name&gt;/window.yaml</code></p>
+      <div class="demo-grid">
+        <div class="demo-card">
+          <div class="dc-name">hello</div>
+          <div class="dc-desc">Minimal static HTML app — no backend, no native features. Best starting point.</div>
+          <div class="dc-tags"><span class="dc-tag mode-badge mode-server">server</span></div>
+        </div>
+        <div class="demo-card">
+          <div class="dc-name">counter</div>
+          <div class="dc-desc">Bidirectional communication — increment/decrement via Python, live clock via server push.</div>
+          <div class="dc-tags"><span class="dc-tag mode-badge mode-server">server</span><span class="dc-tag">Python</span></div>
+        </div>
+        <div class="demo-card">
+          <div class="dc-name">dashboard</div>
+          <div class="dc-desc">Three live-updating Chart.js charts loaded from CDN using <code>js_inject</code>.</div>
+          <div class="dc-tags"><span class="dc-tag mode-badge mode-server">server</span><span class="dc-tag">js_inject</span></div>
+        </div>
+        <div class="demo-card">
+          <div class="dc-name">file_explorer</div>
+          <div class="dc-desc">Two-pane file browser using <code>NATIVE.fs</code> — no backend process needed.</div>
+          <div class="dc-tags"><span class="dc-tag mode-badge mode-server">server</span><span class="dc-tag">native:fs</span></div>
+        </div>
+        <div class="demo-card">
+          <div class="dc-name">terminal</div>
+          <div class="dc-desc">Minimal terminal emulator — run commands via <code>NATIVE.os.exec</code>.</div>
+          <div class="dc-tags"><span class="dc-tag mode-badge mode-server">server</span><span class="dc-tag">native:os</span></div>
+        </div>
+        <div class="demo-card">
+          <div class="dc-name">multiwindow</div>
+          <div class="dc-desc">Python script opens 2 windows, navigates one, evals JS, then closes both.</div>
+          <div class="dc-tags"><span class="dc-tag mode-badge mode-ctrl">controlled</span><span class="dc-tag">Python</span></div>
+        </div>
+        <div class="demo-card">
+          <div class="dc-name">three</div>
+          <div class="dc-desc">Three.js 3D maze/snake game using a locally bundled library.</div>
+          <div class="dc-tags"><span class="dc-tag mode-badge mode-server">server</span><span class="dc-tag">Three.js</span></div>
+        </div>
+        <div class="demo-card">
+          <div class="dc-name">browser</div>
+          <div class="dc-desc">Injects a custom HTML UI into an existing web page via closed shadow DOM.</div>
+          <div class="dc-tags"><span class="dc-tag mode-badge mode-browser">browser</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Run Modes ──────────────────────────────────────────────────── -->
+    <section id="modes">
+      <h2><div class="section-icon">⊞</div>Run Modes</h2>
+      <p class="lead">Set <code>mode:</code> in <code>window.yaml</code> to choose how the window is opened.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>mode</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="mode-badge mode-server">server (default)</span></td><td>Local HTTP server + optional backend subprocess. Best for most apps.</td></tr>
+            <tr><td><span class="mode-badge mode-url">url</span></td><td>Open a fixed URL directly. Useful for wrapping existing web apps.</td></tr>
+            <tr><td><span class="mode-badge mode-proxy">proxy</span></td><td>Reverse-proxy to another dev server (e.g. <code>npm run dev</code>).</td></tr>
+            <tr><td><span class="mode-badge mode-browser">browser</span></td><td>Inject an HTML overlay into any web page via a closed shadow DOM.</td></tr>
+            <tr><td><span class="mode-badge mode-ctrl">controlled</span></td><td>Backend subprocess creates, navigates, and destroys windows programmatically.</td></tr>
+            <tr><td><span class="mode-badge mode-wasm">wasm</span></td><td>A <code>.wasm</code> module is the backend — no subprocess, no socket.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Server mode (default)</h3>
+<pre><code class="language-yaml">title: "My App"
+entry_path: ./static/index.html
+static_dirs:
+  "/static": ./static/
+run_backend_script: python3 main.py   # optional</code></pre>
+
+      <h3>URL mode</h3>
+<pre><code class="language-yaml">mode: url
+url: "https://example.com"</code></pre>
+
+      <h3>Proxy mode</h3>
+<pre><code class="language-yaml">mode: proxy
+proxy_target: "http://localhost:${PORT}"
+proxy_command: "npm run dev"   # started automatically</code></pre>
+
+      <h3>Browser overlay mode</h3>
+<pre><code class="language-yaml">mode: browser
+url: "https://example.com"
+inject_html: ./overlay.html</code></pre>
+
+      <h3>Controlled mode</h3>
+<pre><code class="language-yaml">mode: controlled
+controlled_script: python3 controller.py</code></pre>
+
+      <h3>WASM mode</h3>
+<pre><code class="language-yaml">mode: wasm
+wasm_backend: ./app.wasm
+entry_path: ./static/index.html
+static_dirs:
+  "/static": ./static/</code></pre>
+    </section>
+
+    <!-- ── Configuration ─────────────────────────────────────────────── -->
+    <section id="configuration">
+      <h2><div class="section-icon">⚙</div>Configuration</h2>
+      <p class="lead">All settings are in <code>window.yaml</code> (or <code>window.json</code>). Paths are relative to the config file's directory.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>title</code></td><td>string</td><td><code>""</code></td><td>Window title bar text</td></tr>
+            <tr><td><code>debug_mode</code></td><td>bool</td><td><code>false</code></td><td>Enable webview DevTools inspector</td></tr>
+            <tr><td><code>size.width</code></td><td>int</td><td><code>800</code></td><td>Window width in pixels</td></tr>
+            <tr><td><code>size.height</code></td><td>int</td><td><code>800</code></td><td>Window height in pixels</td></tr>
+            <tr><td><code>entry_path</code></td><td>string</td><td></td><td>HTML file served at <code>GET /</code></td></tr>
+            <tr><td><code>html</code></td><td>string</td><td></td><td>Inline HTML for <code>GET /</code> (overrides entry_path)</td></tr>
+            <tr><td><code>static_dirs</code></td><td>map</td><td></td><td>URL prefix → local directory</td></tr>
+            <tr><td><code>files</code></td><td>map</td><td></td><td>URL path → local file</td></tr>
+            <tr><td><code>mode</code></td><td>string</td><td><code>""</code></td><td>Run mode: <code>url</code>, <code>proxy</code>, <code>browser</code>, <code>controlled</code>, <code>wasm</code></td></tr>
+            <tr><td><code>run_backend_script</code></td><td>string</td><td></td><td>Shell command to start the backend subprocess</td></tr>
+            <tr><td><code>url</code></td><td>string</td><td></td><td>URL for url/proxy/browser modes</td></tr>
+            <tr><td><code>proxy_target</code></td><td>string</td><td></td><td>Proxy target URL (<code>${ENV}</code> expanded)</td></tr>
+            <tr><td><code>proxy_command</code></td><td>string</td><td></td><td>Command to start the proxy target server</td></tr>
+            <tr><td><code>inject_html</code></td><td>string</td><td></td><td>HTML file to inject in browser mode</td></tr>
+            <tr><td><code>controlled_script</code></td><td>string</td><td></td><td>Script that drives windows in controlled mode</td></tr>
+            <tr><td><code>wasm_backend</code></td><td>string</td><td></td><td>Path to <code>.wasm</code> file</td></tr>
+            <tr><td><code>native_features</code></td><td>[]string</td><td></td><td><code>fs</code>, <code>os</code>, <code>dialogs</code>, <code>canvas</code></td></tr>
+            <tr><td><code>js_inject</code></td><td>[]string</td><td></td><td>CDN/local URLs injected as <code>&lt;script&gt;</code> on every load</td></tr>
+            <tr><td><code>mac_app</code></td><td>object</td><td></td><td>macOS bundle config (icon, files, env, extra_binaries)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Environment variables</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Variable</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td><code>WINDOW_PORT</code></td><td>Fix the local HTTP server port (default: random free port)</td></tr>
+            <tr><td><code>DEBUG=1</code></td><td>Enable Go HTTP request logging to stdout</td></tr>
+            <tr><td><code>DEV_MODE=1</code></td><td>Start HTTP server only — don't open a window (great for testing)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── CLI ───────────────────────────────────────────────────────── -->
+    <section id="cli">
+      <h2><div class="section-icon">$</div>CLI Reference</h2>
+      <p class="lead">The <code>window</code> binary accepts a config path or one of the flags below.</p>
+<pre><code class="language-bash">window [flags | path]</code></pre>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Command</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>window path/to/window.yaml</code></td><td>Run app from YAML config</td></tr>
+            <tr><td><code>window path/to/window.json</code></td><td>Run app from JSON config</td></tr>
+            <tr><td><code>window /path/to/file.md</code></td><td>Quick-view any file (auto-wraps in minimal config)</td></tr>
+            <tr><td><code>window --version</code></td><td>Print version and exit</td></tr>
+            <tr><td><code>window --init [dir]</code></td><td>Scaffold a new project (default: current directory)</td></tr>
+            <tr><td><code>window --mac-app [config]</code></td><td>Build a macOS <code>.app</code> bundle (macOS only)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3><code>--init</code></h3>
+<pre><code class="language-bash">window --init myapp
+# Creates:
+# myapp/window.yaml
+# myapp/static/index.html</code></pre>
+
+      <h3><code>--mac-app</code></h3>
+<pre><code class="language-yaml"># window.yaml
+mac_app:
+  icon: icon.icns
+  extra_binaries:
+    - python3
+  files:
+    - ./static
+    - ./window.yaml
+  env:
+    MY_API_KEY: "secret"</code></pre>
+<pre><code class="language-bash">window --mac-app window.yaml
+# → MyApp.app/</code></pre>
+    </section>
+
+    <!-- ── Native Features ───────────────────────────────────────────── -->
+    <section id="native">
+      <h2><div class="section-icon">🖥</div>Native Features</h2>
+      <p class="lead">Expose file system, OS, dialog, and canvas APIs to the frontend — no backend process needed.</p>
+<pre><code class="language-yaml">native_features:
+  - fs       # NATIVE.fs.readFile / writeFile / readDir / watchFile
+  - os       # NATIVE.os.exec / getEnv / platform / info
+  - dialogs  # NATIVE.dialogs.openFile / saveFile / showMessage
+  - canvas   # NATIVE.canvas.drawRect / drawText / clear</code></pre>
+
+      <h3>File System — <code>NATIVE.fs</code></h3>
+<pre><code class="language-javascript">// Read a file as UTF-8 string
+const text = await window.NATIVE.fs.readFile("/path/to/file.txt")
+
+// Write a file (perm: Unix file mode, e.g. 420 = 0o644)
+await window.NATIVE.fs.writeFile("/path/to/out.txt", "hello", 420)
+
+// List directory → [{name, is_dir, size}]
+const entries = await window.NATIVE.fs.readDir("/home/user/Documents")
+
+// Watch a file for changes
+window.NATIVE.fs.watchFile("/path/to/file", (newContent) => {
+  console.log("changed:", newContent)
+})</code></pre>
+
+      <h3>OS — <code>NATIVE.os</code></h3>
+<pre><code class="language-javascript">// Execute a command
+const r = await window.NATIVE.os.exec("git", ["log", "--oneline", "-5"])
+console.log(r.stdout)   // stdout string
+console.log(r.stderr)   // stderr string
+console.log(r.error)    // error string (if non-zero exit)
+
+// Environment
+const home = await window.NATIVE.os.getEnv("HOME")
+
+// Platform: "darwin" | "linux" | "windows"
+const plat = await window.NATIVE.os.platform()
+
+// { os: "darwin", arch: "arm64" }
+const info = await window.NATIVE.os.info()</code></pre>
+
+      <h3>Dialogs — <code>NATIVE.dialogs</code></h3>
+<pre><code class="language-javascript">// File picker → string[] of selected paths
+const paths = await window.NATIVE.dialogs.openFile({
+  title: "Open file",
+  multi: false,
+  filters: ["*.txt", "*.md"],
+})
+
+// Save dialog → string path
+const dest = await window.NATIVE.dialogs.saveFile({ title: "Save as…" })
+
+// Notification dialog
+await window.NATIVE.dialogs.showMessage({
+  title: "Done",
+  message: "File saved.",
+  kind: "info",  // "info" | "warn" | "error"
+})</code></pre>
+
+      <h3>Canvas — <code>NATIVE.canvas</code></h3>
+<pre><code class="language-html">&lt;canvas id="c" width="600" height="400"&gt;&lt;/canvas&gt;</code></pre>
+<pre><code class="language-javascript">await window.NATIVE.canvas.drawRect({
+  canvas_id: "c", x: 10, y: 10, w: 200, h: 100,
+  color: "#7c7cff", fill: true,
+})
+await window.NATIVE.canvas.drawText({
+  canvas_id: "c", x: 10, y: 150,
+  text: "Hello canvas", font: "20px sans-serif", color: "#fff",
+})
+await window.NATIVE.canvas.clear("c")</code></pre>
+    </section>
+
+    <!-- ── Backend Protocol ──────────────────────────────────────────── -->
+    <section id="backend">
+      <h2><div class="section-icon">⇄</div>Backend Protocol</h2>
+      <p class="lead">Any language that can connect to a Unix socket and read/write newline-delimited JSON can be a backend.</p>
+
+      <h3>How it works</h3>
+      <ol style="margin:12px 0 20px;padding-left:20px;color:var(--text-dim)">
+        <li style="margin-bottom:8px">Go creates a Unix socket and sets <code>WINDOW_SOCK_PATH</code> in the subprocess env.</li>
+        <li style="margin-bottom:8px">The subprocess connects to the socket.</li>
+        <li>Both sides exchange newline-delimited JSON messages.</li>
+      </ol>
+
+      <h3>Message format</h3>
+<pre><code class="language-javascript">// Every message (both directions):
+{
+  "id":       "uuid",          // correlation ID
+  "function": "handlerName",   // function / event name
+  "data":     { ... },         // JSON payload
+  "done":     true,            // true = final reply for this request
+  "type":     "data",          // "data" | "eval"
+  "code":     ""               // JS to eval when type == "eval"
+}</code></pre>
+
+      <h3>Frontend JS API</h3>
+<pre><code class="language-javascript">// Call a backend function
+BACKEND.call("add", { value: 5 }, ({ data, err }) => {
+  if (err) { console.error(err); return; }
+  console.log(data.value) // 6
+})
+
+// Subscribe to server-push events
+BACKEND.onEvent("timer", ({ current_time }) => {
+  document.getElementById("clock").textContent = current_time
+})</code></pre>
+
+      <h3>Python client</h3>
+      <p>Copy <code>demos/counter/client.py</code> into your project:</p>
+<pre><code class="language-python">from client import App, ResponseWriter
+import asyncio
+
+app = App()
+
+@app.handle("add")
+async def add(req, rw):
+    await rw.send({"value": req["value"] + 1})
+
+# Push events to all frontends
+async def tick():
+    import time
+    while True:
+        await asyncio.sleep(1)
+        await app.publish("timer", {"current_time": time.strftime("%H:%M:%S")})
+
+async def main():
+    await app.run()
+    asyncio.create_task(tick())
+    await asyncio.Event().wait()
+
+asyncio.run(main())</code></pre>
+
+      <h3>Minimal Node.js backend</h3>
+<pre><code class="language-javascript">const net = require('net')
+const client = net.connect(process.env.WINDOW_SOCK_PATH, () => {
+  client.on('data', buf => {
+    const msg = JSON.parse(buf)
+    const reply = { id: msg.id, function: msg.function,
+                    data: { result: 'ok' }, done: true }
+    client.write(JSON.stringify(reply) + '\n')
+  })
+})</code></pre>
+
+      <h3>Server push</h3>
+      <p>Send messages with an ID that starts with <code>server:</code> to push events to the frontend without a request:</p>
+<pre><code class="language-python">await app.publish("notification", {"text": "Build complete!"})</code></pre>
+    </section>
+
+    <!-- ── WASM Backend ───────────────────────────────────────────────── -->
+    <section id="wasm">
+      <h2><div class="section-icon">◈</div>WASM Backend</h2>
+      <p class="lead">Compile your backend to WebAssembly and ship it as a single binary — no subprocess, no socket, no runtime.</p>
+<pre><code class="language-yaml">mode: wasm
+wasm_backend: ./app.wasm
+entry_path: ./static/index.html</code></pre>
+
+      <h3>Module contract</h3>
+      <p>The <code>.wasm</code> module must export exactly two functions:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Export</th><th>Signature</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>alloc</code></td><td><code>(size i32) → i32</code></td><td>Allocate bytes; return pointer. Used by Go to write data before calling <code>handle</code>.</td></tr>
+            <tr><td><code>handle</code></td><td><code>(fn_ptr, fn_len, data_ptr, data_len i32) → i64</code></td><td>Process a request. Returns packed <code>resp_ptr &lt;&lt; 32 | resp_len</code>.</td></tr>
+            <tr><td><code>init</code></td><td><code>() → void</code> (optional)</td><td>Called once at module load. Use for global initialization.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>TinyGo example</h3>
+<pre><code class="language-go">package main
+
+import (
+    "encoding/json"
+    "unsafe"
+)
+
+var buf [1 &lt;&lt; 20]byte
+var heap [1 &lt;&lt; 20]byte
+var heapOff uintptr
+
+//export alloc
+func alloc(size int32) uintptr {
+    ptr := uintptr(unsafe.Pointer(&amp;heap[heapOff]))
+    heapOff += uintptr(size)
+    return ptr
+}
+
+//export handle
+func handle(fnPtr, fnLen, dataPtr, dataLen int32) int64 {
+    fn := string(unsafe.Slice((*byte)(unsafe.Pointer(uintptr(fnPtr))), fnLen))
+    data := unsafe.Slice((*byte)(unsafe.Pointer(uintptr(dataPtr))), dataLen)
+    var req map[string]any
+    json.Unmarshal(data, &amp;req)
+
+    var resp map[string]any
+    switch fn {
+    case "add":
+        v, _ := req["value"].(float64)
+        resp = map[string]any{"value": v + 1}
+    default:
+        resp = map[string]any{"error": "unknown: " + fn}
+    }
+
+    b, _ := json.Marshal(resp)
+    copy(buf[:], b)
+    ptr := uintptr(unsafe.Pointer(&amp;buf[0]))
+    return int64(ptr)&lt;&lt;32 | int64(len(b))
+}
+
+func main() {}</code></pre>
+<pre><code class="language-bash">tinygo build -o app.wasm -target wasi ./main.go</code></pre>
+
+      <div class="callout">
+        <span class="ci">ℹ</span>
+        <span>The WASM runtime is <a href="https://wazero.io" target="_blank">wazero</a> — pure Go, no CGo, no external runtimes. WASI preview1 is instantiated automatically. Server-push events (<code>BACKEND.onEvent</code>) are not available in WASM mode — use polling instead.</span>
+      </div>
+    </section>
+
+    <!-- ── Controlled Mode ────────────────────────────────────────────── -->
+    <section id="controlled">
+      <h2><div class="section-icon">◎</div>Controlled Mode</h2>
+      <p class="lead">Let a backend script create, navigate, eval JS in, and destroy windows programmatically.</p>
+<pre><code class="language-yaml">mode: controlled
+controlled_script: python3 controller.py</code></pre>
+
+      <h3>Command protocol</h3>
+      <p>Go starts the script and sets <code>WINDOW_CONTROL_SOCK_PATH</code>. The script connects and sends commands:</p>
+<pre><code class="language-javascript">// create_window
+{"cmd":"create_window","id":"r1","params":{"title":"T","url":"https://x.com","width":800,"height":600}}
+// → {"id":"r1","window_id":"win1"}
+
+// navigate
+{"cmd":"navigate","id":"r2","window_id":"win1","url":"https://y.com"}
+
+// eval
+{"cmd":"eval","id":"r3","window_id":"win1","js":"document.title='hi'"}
+
+// close
+{"cmd":"close","id":"r4","window_id":"win1"}</code></pre>
+
+      <h3>Python WindowManager</h3>
+<pre><code class="language-python">import asyncio, json, os, uuid
+
+class WindowManager:
+    def __init__(self):
+        self.sock_path = os.getenv("WINDOW_CONTROL_SOCK_PATH")
+        self.reader = self.writer = None
+        self._pending = {}
+
+    async def connect(self):
+        for _ in range(20):
+            try:
+                self.reader, self.writer = await asyncio.open_unix_connection(self.sock_path)
+                asyncio.create_task(self._recv_loop())
+                return
+            except (FileNotFoundError, ConnectionRefusedError):
+                await asyncio.sleep(0.2)
+        raise RuntimeError("could not connect to control socket")
+
+    async def _recv_loop(self):
+        async for line in self.reader:
+            msg = json.loads(line)
+            if (fut := self._pending.pop(msg.get("id"), None)):
+                fut.set_result(msg)
+
+    async def _send(self, cmd):
+        cmd["id"] = uuid.uuid4().hex
+        fut = asyncio.get_event_loop().create_future()
+        self._pending[cmd["id"]] = fut
+        self.writer.write((json.dumps(cmd) + "\n").encode())
+        return await asyncio.wait_for(fut, 5)
+
+    async def create_window(self, title, url, width=800, height=600):
+        r = await self._send({"cmd":"create_window",
+                               "params":{"title":title,"url":url,"width":width,"height":height}})
+        return r["window_id"]
+
+    async def navigate(self, win_id, url):
+        await self._send({"cmd":"navigate","window_id":win_id,"url":url})
+
+    async def eval(self, win_id, js):
+        await self._send({"cmd":"eval","window_id":win_id,"js":js})
+
+    async def close(self, win_id):
+        await self._send({"cmd":"close","window_id":win_id})
+
+
+async def main():
+    wm = WindowManager()
+    await wm.connect()
+    win = await wm.create_window("Hello", "https://example.com", 700, 500)
+    await asyncio.sleep(2)
+    await wm.eval(win, "document.body.style.background='navy'")
+    await asyncio.sleep(2)
+    await wm.close(win)
+
+asyncio.run(main())</code></pre>
+
+      <div class="callout">
+        <span class="ci">⚠</span>
+        <span>Multiple simultaneous windows work best on Linux (GTK). macOS (Cocoa) has threading constraints that may cause unexpected behaviour with multiple webview instances.</span>
+      </div>
+    </section>
+
+    <!-- ── Building ───────────────────────────────────────────────────── -->
+    <section id="building">
+      <h2><div class="section-icon">⚒</div>Building from Source</h2>
+      <p class="lead">Requires Go 1.21+ and a C compiler (CGo is used for the native webview bindings).</p>
+<pre><code class="language-bash">git clone https://github.com/luowensheng/window
+cd window
+go build -o window .</code></pre>
+
+      <h3>Platform dependencies</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Platform</th><th>Requirements</th></tr></thead>
+          <tbody>
+            <tr><td>macOS</td><td>Xcode command-line tools (<code>xcode-select --install</code>)</td></tr>
+            <tr><td>Linux</td><td><code>libgtk-3-dev libwebkit2gtk-4.0-dev</code> (or <code>4.1-dev</code>)</td></tr>
+            <tr><td>Windows</td><td>WebView2 Runtime (ships with Edge / Windows 11)</td></tr>
+          </tbody>
+        </table>
+      </div>
+<pre><code class="language-bash"># Linux
+sudo apt install libgtk-3-dev libwebkit2gtk-4.0-dev
+
+# macOS
+xcode-select --install</code></pre>
+
+      <h3>Project structure</h3>
+<pre><code class="language-bash">webview_gui/
+├── main.go                  # 10-line entry point
+├── appio/                   # CLI + config loading
+├── domain/                  # Pure data types
+├── features/                # Capability interfaces (structs of functions)
+├── infra/                   # OS implementations
+│   ├── native/              # fs, os, dialogs
+│   └── wasm/                # wazero WASM runtime
+├── orchestrator/            # Wiring
+│   ├── features/            # Factory functions
+│   └── usecases/            # Run-mode functions
+├── assets/                  # Embedded JS + YAML
+└── demos/                   # Example apps</code></pre>
+    </section>
+
+    <footer>
+      <span>window v1.2.0 — MIT License</span>
+      <span>
+        <a href="https://github.com/luowensheng/window" target="_blank">GitHub</a> ·
+        Built with native webview bindings
+      </span>
+    </footer>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+<script>
+// Sidebar mobile
+function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+
+// Active nav on scroll
+const sections = document.querySelectorAll('section[id], .hero[id]');
+const navLinks = document.querySelectorAll('.nav-link');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(a => a.classList.remove('active'));
+      const active = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => observer.observe(s));
+
+// Close sidebar on nav click (mobile)
+navLinks.forEach(a => a.addEventListener('click', closeSidebar));
+</script>
+</body>
+</html>

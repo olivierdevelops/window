@@ -1,0 +1,60 @@
+title: "My App"
+
+# Window size (optional, defaults to 800×800)
+# size:
+#   width: 1024
+#   height: 768
+
+# ── Static file serving ──────────────────────────────────────────────────────
+entry_path: "./static/index.html"
+
+static_dirs:
+  "/static": ./static/
+
+# Individual file overrides (optional)
+# files:
+#   "/favicon.ico": ./static/favicon.ico
+
+# ── Backend modes ─────────────────────────────────────────────────────────────
+# mode: ""          (default) local HTTP server + optional subprocess backend
+# mode: "url"       navigate to a fixed URL
+# mode: "proxy"     reverse-proxy to another server
+# mode: "browser"   inject HTML overlay into an existing page
+# mode: "controlled" backend subprocess drives window creation via socket
+# mode: "wasm"       WASM module serves as the backend (no subprocess)
+
+# Subprocess backend (server mode)
+# run_backend_script: python3 main.py
+
+# URL mode
+# url: "https://example.com"
+
+# Proxy mode
+# proxy_target: "http://localhost:${PORT}"
+# proxy_command: "npm run dev"
+
+# Browser mode (inject UI into a page)
+# inject_html: ./overlay.html
+
+# Controlled mode
+# controlled_script: python3 controller.py
+
+# WASM backend
+# wasm_backend: ./app.wasm
+
+# ── Native OS capabilities ────────────────────────────────────────────────────
+# Exposed to the frontend as window.NATIVE.*
+# native_features:
+#   - fs       # NATIVE.fs.readFile / writeFile / readDir / watchFile
+#   - os       # NATIVE.os.exec / getEnv / platform / info
+#   - dialogs  # NATIVE.dialogs.openFile / saveFile / showMessage
+#   - canvas   # NATIVE.canvas.drawRect / drawText / clear / flush
+
+# ── JS library injection ──────────────────────────────────────────────────────
+# Injected as <script src="..."> on every page load
+# js_inject:
+#   - "https://cdn.jsdelivr.net/npm/chart.js"
+#   - "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+
+# ── Debug ─────────────────────────────────────────────────────────────────────
+# debug_mode: false

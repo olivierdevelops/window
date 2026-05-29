@@ -1,0 +1,9 @@
+title: "Terminal"
+entry_path: ./static/index.html
+static_dirs:
+  "/static": ./static/
+native_features:
+  - os
+size:
+  width: 900
+  height: 600

@@ -1,0 +1,26 @@
+# Build output
+window
+builds/
+*.exe
+*.app/
+
+# Go
+*.test
+*.out
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temp sockets
+*.sock
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
