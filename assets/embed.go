@@ -25,3 +25,18 @@ var NativeDialogsJS []byte
 
 //go:embed native_canvas.js
 var NativeCanvasJS []byte
+
+//go:embed native_camera.js
+var NativeCameraJS []byte
+
+//go:embed native_mic.js
+var NativeMicJS []byte
+
+//go:embed native_speech.js
+var NativeSpeechJS []byte
+
+//go:embed native_screen.js
+var NativeScreenJS []byte
+
+//go:embed native_input.js
+var NativeInputJS []byte

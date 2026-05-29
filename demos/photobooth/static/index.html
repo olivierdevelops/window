@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Photo Booth</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0d1117; color: #e6edf3;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 18px; padding: 28px; min-height: 100vh;
+    }
+    h1 { font-size: 1.6rem; letter-spacing: -0.5px; }
+    .hint { color: #8b949e; font-size: 0.85rem; }
+    video, img {
+      width: 100%; max-width: 560px; aspect-ratio: 4 / 3;
+      object-fit: cover; border-radius: 14px;
+      background: #161b22; border: 1px solid #30363d;
+    }
+    .row { display: flex; gap: 12px; }
+    button {
+      background: #7c7cff; color: #fff; border: none;
+      padding: 11px 22px; border-radius: 9px;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    }
+    button.ghost { background: #21262d; border: 1px solid #30363d; color: #e6edf3; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    a { color: #58a6ff; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <h1>📸 Photo Booth</h1>
+  <p class="hint">camera + speech + input — no backend. Press <kbd>Space</kbd> to shoot.</p>
+
+  <video id="cam" autoplay muted playsinline></video>
+  <img id="shot" alt="" hidden>
+
+  <div class="row">
+    <button id="shoot">Take photo</button>
+    <button id="again" class="ghost" hidden>Retake</button>
+    <a id="save" hidden download="photo.png">Download</a>
+  </div>
+
+  <script>
+    const cam = document.getElementById("cam");
+    const shot = document.getElementById("shot");
+    const shoot = document.getElementById("shoot");
+    const again = document.getElementById("again");
+    const save = document.getElementById("save");
+
+    async function startCamera() {
+      try {
+        await NATIVE.camera.stream({ into: "#cam" });
+      } catch (e) {
+        document.querySelector(".hint").textContent = "Camera unavailable: " + e.message;
+        shoot.disabled = true;
+      }
+    }
+
+    async function takePhoto() {
+      shoot.disabled = true;
+      try { await NATIVE.speech.say("Three. Two. One."); } catch (_) {}
+      const dataURL = await NATIVE.camera.snapshot({ type: "image/png" });
+      shot.src = dataURL;
+      save.href = dataURL;
+      cam.hidden = true; shot.hidden = false;
+      shoot.hidden = true; again.hidden = false; save.hidden = false;
+    }
+
+    shoot.onclick = takePhoto;
+    again.onclick = () => {
+      cam.hidden = false; shot.hidden = true;
+      shoot.hidden = false; again.hidden = true; save.hidden = true;
+      shoot.disabled = false;
+    };
+    NATIVE.input.hotkey("space", () => { if (!shoot.disabled && !shoot.hidden) takePhoto(); });
+
+    startCamera();
+  </script>
+</body>
+</html>

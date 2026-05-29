@@ -1,0 +1,11 @@
+title: "Photo Booth"
+entry_path: ./static/index.html
+static_dirs:
+  "/static": ./static/
+native_features:
+  - camera
+  - speech
+  - input
+size:
+  width: 760
+  height: 720

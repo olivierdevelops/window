@@ -18,6 +18,11 @@ const (
 	NativeOS      NativeFeature = "os"
 	NativeDialogs NativeFeature = "dialogs"
 	NativeCanvas  NativeFeature = "canvas"
+	NativeCamera  NativeFeature = "camera"
+	NativeMic     NativeFeature = "mic"
+	NativeSpeech  NativeFeature = "speech"
+	NativeScreen  NativeFeature = "screen"
+	NativeInput   NativeFeature = "input"
 )
 
 type WindowSize struct {

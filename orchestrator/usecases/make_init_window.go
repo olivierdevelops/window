@@ -69,6 +69,16 @@ func bindNativeFeatures(win features.Windowing, h features.WindowHandle, nativeF
 			err = bindNativeDialogs(win, h, orchfeatures.MakeNativeDialogs())
 		case domain.NativeCanvas:
 			err = bindNativeCanvas(win, h, orchfeatures.MakeNativeCanvas(win, h))
+		case domain.NativeCamera:
+			win.Init(h, string(assets.NativeCameraJS))
+		case domain.NativeMic:
+			win.Init(h, string(assets.NativeMicJS))
+		case domain.NativeSpeech:
+			win.Init(h, string(assets.NativeSpeechJS))
+		case domain.NativeScreen:
+			win.Init(h, string(assets.NativeScreenJS))
+		case domain.NativeInput:
+			win.Init(h, string(assets.NativeInputJS))
 		}
 		if err != nil {
 			return err

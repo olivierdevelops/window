@@ -1,733 +1,507 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>window — Native desktop apps with any backend</title>
-<meta name="description" content="Build native desktop apps with any language as the backend. Write your UI in HTML/CSS/JS, connect a backend in Python, Go, Rust, or Node.js.">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-<link rel="stylesheet" href="style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="window — build native desktop apps with an HTML/CSS/JS frontend and any-language backend. Camera, mic, speech, screen and input in one line." />
+<title>window — native desktop apps, any language</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;
+    --text:#e6edf3;--muted:#8b949e;--accent:#7c7cff;--accent2:#58a6ff;
+    --green:#3fb950;--red:#ff5f57;--yellow:#febc2e;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.55;font-size:15px}
+  a{color:var(--accent2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:"SF Mono","Fira Code",ui-monospace,monospace}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  svg{display:block;max-width:100%;height:auto}
+
+  header.top{position:sticky;top:0;z-index:50;background:rgba(13,17,23,.85);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  header.top .wrap{display:flex;align-items:center;gap:20px;height:58px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.3px}
+  .brand .mark{width:28px;height:28px;border-radius:7px;background:var(--accent);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+  header.top nav{margin-left:auto;display:flex;gap:22px;font-size:14px}
+  header.top nav a{color:var(--muted)}
+  header.top nav a:hover{color:var(--text);text-decoration:none}
+  @media(max-width:720px){header.top nav{display:none}}
+
+  .hero{padding:60px 0 44px;border-bottom:1px solid var(--border);
+    background:radial-gradient(900px 400px at 70% -10%,rgba(124,124,255,.14),transparent)}
+  .hero .wrap{display:grid;grid-template-columns:1fr 1.05fr;gap:44px;align-items:center}
+  .badge{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(124,124,255,.35);
+    background:rgba(124,124,255,.12);color:var(--accent);border-radius:999px;
+    padding:4px 12px;font-size:12px;margin-bottom:18px}
+  h1{font-size:2.9rem;line-height:1.07;letter-spacing:-1.5px;font-weight:800;margin-bottom:14px}
+  h1 span{background:linear-gradient(120deg,var(--text) 35%,var(--accent));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p.lead{color:var(--muted);font-size:1.06rem;max-width:480px;margin-bottom:24px}
+  .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:9px;
+    font-weight:600;font-size:14px;cursor:pointer;border:1px solid transparent}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.ghost{background:var(--bg2);border-color:var(--border);color:var(--text)}
+  .btn:hover{transform:translateY(-1px);text-decoration:none}
+  @media(max-width:860px){.hero .wrap{grid-template-columns:1fr}h1{font-size:2.2rem}}
+
+  section{padding:60px 0;border-bottom:1px solid var(--border)}
+  .eyebrow{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:1px;
+    text-transform:uppercase;margin-bottom:9px;text-align:center}
+  h2{font-size:1.85rem;letter-spacing:-.6px;text-align:center}
+  .sub{color:var(--muted);max-width:560px;margin:10px auto 0;text-align:center}
+  .diagram{margin:40px auto 0;max-width:760px}
+
+  .shot{filter:drop-shadow(0 24px 48px rgba(0,0,0,.55));width:100%;border-radius:14px}
+
+  /* capability tiles */
+  .caps{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:42px}
+  @media(max-width:860px){.caps{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:460px){.caps{grid-template-columns:1fr}}
+  .cap{background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+    padding:22px 16px;text-align:center;transition:border-color .15s,transform .15s}
+  .cap:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .cap svg{margin:0 auto 14px}
+  .cap h3{font-size:1rem;margin-bottom:8px}
+  .cap .one{font-size:11.5px;color:var(--muted);font-family:"SF Mono",monospace;
+    background:#0a0d12;border:1px solid var(--border);border-radius:7px;padding:7px 8px;
+    display:block;word-break:break-word;line-height:1.4}
+  .cap .one b{color:var(--accent2);font-weight:400}
+
+  /* app gallery (no code) */
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:42px}
+  @media(max-width:860px){.gallery{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.gallery{grid-template-columns:1fr}}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+    overflow:hidden;transition:border-color .15s,transform .15s}
+  .card:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .card .pic{background:#0a0d12;padding:14px;border-bottom:1px solid var(--border)}
+  .card .pic svg{border-radius:8px}
+  .card .body{padding:14px 18px}
+  .card h3{font-size:1rem;margin-bottom:9px}
+  .tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:999px;
+    background:rgba(124,124,255,.1);border:1px solid rgba(124,124,255,.3);
+    color:var(--accent);margin:0 5px 5px 0}
+
+  /* run mode tiles */
+  .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:42px}
+  @media(max-width:720px){.modes{grid-template-columns:1fr}}
+  .mode{display:flex;gap:14px;align-items:flex-start;background:var(--bg2);
+    border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+  .mode .ico{flex:0 0 auto}
+  .mode b{font-family:"SF Mono",monospace;color:var(--accent2);font-size:14px}
+  .mode p{color:var(--muted);font-size:13px;margin-top:3px}
+
+  footer{padding:34px 0;color:var(--muted);font-size:13px}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  footer .links{display:flex;gap:16px;flex-wrap:wrap}
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+</style>
 </head>
 <body>
 
-<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><span class="mark">W</span> window <span style="color:var(--muted);font-weight:500;font-size:13px">v1.2</span></div>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#capabilities">Capabilities</a>
+      <a href="#build">Build</a>
+      <a href="#start">Quick start</a>
+      <a href="https://github.com/luowensheng/window">GitHub</a>
+    </nav>
+  </div>
+</header>
 
-<!-- Sidebar -->
-<aside class="sidebar" id="sidebar">
-  <a class="sidebar-logo" href="#home">
-    <div class="logo-icon">w</div>
+<!-- ───────────────────────── HERO ───────────────────────── -->
+<div class="hero">
+  <div class="wrap">
     <div>
-      <div class="logo-text">window</div>
-      <div class="logo-version">v1.2.0</div>
-    </div>
-  </a>
-  <nav>
-    <a href="#home" class="nav-link active"><span class="nav-icon">⌂</span>Home</a>
-    <a href="#quickstart" class="nav-link"><span class="nav-icon">⚡</span>Quick Start</a>
-    <a href="#demos" class="nav-link"><span class="nav-icon">▶</span>Demos</a>
-    <div class="nav-section">Reference</div>
-    <a href="#modes" class="nav-link"><span class="nav-icon">⊞</span>Run Modes</a>
-    <a href="#configuration" class="nav-link"><span class="nav-icon">⚙</span>Configuration</a>
-    <a href="#cli" class="nav-link"><span class="nav-icon">$</span>CLI</a>
-    <div class="nav-section">Features</div>
-    <a href="#native" class="nav-link"><span class="nav-icon">🖥</span>Native Features</a>
-    <a href="#backend" class="nav-link"><span class="nav-icon">⇄</span>Backend Protocol</a>
-    <a href="#wasm" class="nav-link"><span class="nav-icon">◈</span>WASM Backend</a>
-    <a href="#controlled" class="nav-link"><span class="nav-icon">◎</span>Controlled Mode</a>
-    <div class="nav-section">More</div>
-    <a href="#building" class="nav-link"><span class="nav-icon">⚒</span>Building</a>
-    <a href="https://github.com/luowensheng/window" target="_blank" class="nav-link"><span class="nav-icon">↗</span>GitHub</a>
-  </nav>
-</aside>
-
-<div class="layout">
-  <div class="content">
-
-    <!-- Mobile header -->
-    <header class="mobile-header">
-      <button class="hamburger" onclick="openSidebar()">☰</button>
-      <span class="mobile-logo">window</span>
-      <span></span>
-    </header>
-
-    <!-- ── Hero ───────────────────────────────────────────────────────── -->
-    <div class="hero" id="home">
-      <div class="hero-badge">v1.2.0 — stable</div>
-      <h1>Native desktop apps<br>with any backend</h1>
-      <p class="hero-sub">
-        Write your UI in HTML/CSS/JS. Connect a backend in Python, Go, Rust, Node.js,
-        or any language over a simple socket protocol. Or ship a WebAssembly module —
-        zero runtime dependencies.
-      </p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="#quickstart">Get started →</a>
-        <a class="btn btn-secondary" href="https://github.com/luowensheng/window" target="_blank">GitHub ↗</a>
-      </div>
-      <div class="hero-snippet">
-        <div class="snippet-card">
-          <div class="snippet-card-header">window.yaml</div>
-<pre><code class="language-yaml">title: "My App"
-entry_path: ./static/index.html
-static_dirs:
-  "/static": ./static/
-run_backend_script: python3 main.py</code></pre>
-        </div>
-        <div class="snippet-card">
-          <div class="snippet-card-header">main.py</div>
-<pre><code class="language-python">from client import App, ResponseWriter
-import asyncio
-
-app = App()
-
-@app.handle("greet")
-async def greet(req, rw):
-    await rw.send({"msg": f"Hello, {req['name']}!"})
-
-asyncio.run(app.run())</code></pre>
-        </div>
+      <span class="badge">● native desktop · any-language backend</span>
+      <h1>Native desktop apps,<br><span>built like web pages.</span></h1>
+      <p class="lead">One small binary reads a <code>window.yaml</code> and opens a real native
+        window. Reach the camera, mic, speaker, screen &amp; keyboard with a single call.</p>
+      <div class="cta">
+        <a class="btn primary" href="#start">Get started →</a>
+        <a class="btn ghost" href="#capabilities">See capabilities</a>
       </div>
     </div>
-
-    <!-- ── Features overview ──────────────────────────────────────────── -->
-    <section id="features" style="padding-top:48px;padding-bottom:40px">
-      <div class="feature-grid">
-        <div class="feature-card">
-          <div class="fc-icon">🌐</div>
-          <h4>Any Language</h4>
-          <p>Connect backends in Python, Node.js, Rust, Go — any language that can write JSON to a socket.</p>
-        </div>
-        <div class="feature-card">
-          <div class="fc-icon">🖥</div>
-          <h4>Native Capabilities</h4>
-          <p>File system, OS exec, native dialogs, and canvas — no backend process needed.</p>
-        </div>
-        <div class="feature-card">
-          <div class="fc-icon">◈</div>
-          <h4>WASM Backend</h4>
-          <p>Compile your backend to WebAssembly. Single binary, no subprocess, no socket.</p>
-        </div>
-        <div class="feature-card">
-          <div class="fc-icon">📦</div>
-          <h4>JS Injection</h4>
-          <p>Load Chart.js, Three.js, or any CDN library — no HTML changes needed.</p>
-        </div>
-        <div class="feature-card">
-          <div class="fc-icon">◎</div>
-          <h4>Controlled Mode</h4>
-          <p>Let your backend open, navigate, eval JS in, and close windows programmatically.</p>
-        </div>
-        <div class="feature-card">
-          <div class="fc-icon">🍎</div>
-          <h4>macOS .app Bundles</h4>
-          <p>Package for distribution with <code>window --mac-app</code>. No Go toolchain on target.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Quick Start ────────────────────────────────────────────────── -->
-    <section id="quickstart">
-      <h2><div class="section-icon">⚡</div>Quick Start</h2>
-      <p class="lead">Get a window running in under a minute.</p>
-
-      <h3>1. Build the binary</h3>
-      <p>Requires Go 1.21+ and a C compiler (CGo). See <a href="#building">Building from Source</a> for platform deps.</p>
-<pre><code class="language-bash">git clone https://github.com/luowensheng/window
-cd window
-go build -o window .
-# Optional: put it on your PATH
-mv window /usr/local/bin/window</code></pre>
-
-      <h3>2. Scaffold a new project</h3>
-<pre><code class="language-bash">window --init myapp
-cd myapp</code></pre>
-      <p>Creates <code>window.yaml</code> and <code>static/index.html</code>.</p>
-
-      <h3>3. Run it</h3>
-<pre><code class="language-bash">window window.yaml</code></pre>
-
-      <h3>Try a demo</h3>
-<pre><code class="language-bash">window demos/hello/window.yaml        # static HTML
-window demos/dashboard/window.yaml    # Chart.js via js_inject
-window demos/file_explorer/window.yaml # native file system
-window demos/terminal/window.yaml     # native OS exec
-window demos/counter/window.yaml      # Python backend</code></pre>
-
-      <div class="callout">
-        <span class="ci">💡</span>
-        <span>Set <code>DEV_MODE=1</code> to start the HTTP server without opening a native window — useful for testing the backend from a browser.</span>
-      </div>
-    </section>
-
-    <!-- ── Demos ──────────────────────────────────────────────────────── -->
-    <section id="demos">
-      <h2><div class="section-icon">▶</div>Demos</h2>
-      <p class="lead">Run any demo with <code>window demos/&lt;name&gt;/window.yaml</code></p>
-      <div class="demo-grid">
-        <div class="demo-card">
-          <div class="dc-name">hello</div>
-          <div class="dc-desc">Minimal static HTML app — no backend, no native features. Best starting point.</div>
-          <div class="dc-tags"><span class="dc-tag mode-badge mode-server">server</span></div>
-        </div>
-        <div class="demo-card">
-          <div class="dc-name">counter</div>
-          <div class="dc-desc">Bidirectional communication — increment/decrement via Python, live clock via server push.</div>
-          <div class="dc-tags"><span class="dc-tag mode-badge mode-server">server</span><span class="dc-tag">Python</span></div>
-        </div>
-        <div class="demo-card">
-          <div class="dc-name">dashboard</div>
-          <div class="dc-desc">Three live-updating Chart.js charts loaded from CDN using <code>js_inject</code>.</div>
-          <div class="dc-tags"><span class="dc-tag mode-badge mode-server">server</span><span class="dc-tag">js_inject</span></div>
-        </div>
-        <div class="demo-card">
-          <div class="dc-name">file_explorer</div>
-          <div class="dc-desc">Two-pane file browser using <code>NATIVE.fs</code> — no backend process needed.</div>
-          <div class="dc-tags"><span class="dc-tag mode-badge mode-server">server</span><span class="dc-tag">native:fs</span></div>
-        </div>
-        <div class="demo-card">
-          <div class="dc-name">terminal</div>
-          <div class="dc-desc">Minimal terminal emulator — run commands via <code>NATIVE.os.exec</code>.</div>
-          <div class="dc-tags"><span class="dc-tag mode-badge mode-server">server</span><span class="dc-tag">native:os</span></div>
-        </div>
-        <div class="demo-card">
-          <div class="dc-name">multiwindow</div>
-          <div class="dc-desc">Python script opens 2 windows, navigates one, evals JS, then closes both.</div>
-          <div class="dc-tags"><span class="dc-tag mode-badge mode-ctrl">controlled</span><span class="dc-tag">Python</span></div>
-        </div>
-        <div class="demo-card">
-          <div class="dc-name">three</div>
-          <div class="dc-desc">Three.js 3D maze/snake game using a locally bundled library.</div>
-          <div class="dc-tags"><span class="dc-tag mode-badge mode-server">server</span><span class="dc-tag">Three.js</span></div>
-        </div>
-        <div class="demo-card">
-          <div class="dc-name">browser</div>
-          <div class="dc-desc">Injects a custom HTML UI into an existing web page via closed shadow DOM.</div>
-          <div class="dc-tags"><span class="dc-tag mode-badge mode-browser">browser</span></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Run Modes ──────────────────────────────────────────────────── -->
-    <section id="modes">
-      <h2><div class="section-icon">⊞</div>Run Modes</h2>
-      <p class="lead">Set <code>mode:</code> in <code>window.yaml</code> to choose how the window is opened.</p>
-
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>mode</th><th>Description</th></tr></thead>
-          <tbody>
-            <tr><td><span class="mode-badge mode-server">server (default)</span></td><td>Local HTTP server + optional backend subprocess. Best for most apps.</td></tr>
-            <tr><td><span class="mode-badge mode-url">url</span></td><td>Open a fixed URL directly. Useful for wrapping existing web apps.</td></tr>
-            <tr><td><span class="mode-badge mode-proxy">proxy</span></td><td>Reverse-proxy to another dev server (e.g. <code>npm run dev</code>).</td></tr>
-            <tr><td><span class="mode-badge mode-browser">browser</span></td><td>Inject an HTML overlay into any web page via a closed shadow DOM.</td></tr>
-            <tr><td><span class="mode-badge mode-ctrl">controlled</span></td><td>Backend subprocess creates, navigates, and destroys windows programmatically.</td></tr>
-            <tr><td><span class="mode-badge mode-wasm">wasm</span></td><td>A <code>.wasm</code> module is the backend — no subprocess, no socket.</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3>Server mode (default)</h3>
-<pre><code class="language-yaml">title: "My App"
-entry_path: ./static/index.html
-static_dirs:
-  "/static": ./static/
-run_backend_script: python3 main.py   # optional</code></pre>
-
-      <h3>URL mode</h3>
-<pre><code class="language-yaml">mode: url
-url: "https://example.com"</code></pre>
-
-      <h3>Proxy mode</h3>
-<pre><code class="language-yaml">mode: proxy
-proxy_target: "http://localhost:${PORT}"
-proxy_command: "npm run dev"   # started automatically</code></pre>
-
-      <h3>Browser overlay mode</h3>
-<pre><code class="language-yaml">mode: browser
-url: "https://example.com"
-inject_html: ./overlay.html</code></pre>
-
-      <h3>Controlled mode</h3>
-<pre><code class="language-yaml">mode: controlled
-controlled_script: python3 controller.py</code></pre>
-
-      <h3>WASM mode</h3>
-<pre><code class="language-yaml">mode: wasm
-wasm_backend: ./app.wasm
-entry_path: ./static/index.html
-static_dirs:
-  "/static": ./static/</code></pre>
-    </section>
-
-    <!-- ── Configuration ─────────────────────────────────────────────── -->
-    <section id="configuration">
-      <h2><div class="section-icon">⚙</div>Configuration</h2>
-      <p class="lead">All settings are in <code>window.yaml</code> (or <code>window.json</code>). Paths are relative to the config file's directory.</p>
-
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
-          <tbody>
-            <tr><td><code>title</code></td><td>string</td><td><code>""</code></td><td>Window title bar text</td></tr>
-            <tr><td><code>debug_mode</code></td><td>bool</td><td><code>false</code></td><td>Enable webview DevTools inspector</td></tr>
-            <tr><td><code>size.width</code></td><td>int</td><td><code>800</code></td><td>Window width in pixels</td></tr>
-            <tr><td><code>size.height</code></td><td>int</td><td><code>800</code></td><td>Window height in pixels</td></tr>
-            <tr><td><code>entry_path</code></td><td>string</td><td></td><td>HTML file served at <code>GET /</code></td></tr>
-            <tr><td><code>html</code></td><td>string</td><td></td><td>Inline HTML for <code>GET /</code> (overrides entry_path)</td></tr>
-            <tr><td><code>static_dirs</code></td><td>map</td><td></td><td>URL prefix → local directory</td></tr>
-            <tr><td><code>files</code></td><td>map</td><td></td><td>URL path → local file</td></tr>
-            <tr><td><code>mode</code></td><td>string</td><td><code>""</code></td><td>Run mode: <code>url</code>, <code>proxy</code>, <code>browser</code>, <code>controlled</code>, <code>wasm</code></td></tr>
-            <tr><td><code>run_backend_script</code></td><td>string</td><td></td><td>Shell command to start the backend subprocess</td></tr>
-            <tr><td><code>url</code></td><td>string</td><td></td><td>URL for url/proxy/browser modes</td></tr>
-            <tr><td><code>proxy_target</code></td><td>string</td><td></td><td>Proxy target URL (<code>${ENV}</code> expanded)</td></tr>
-            <tr><td><code>proxy_command</code></td><td>string</td><td></td><td>Command to start the proxy target server</td></tr>
-            <tr><td><code>inject_html</code></td><td>string</td><td></td><td>HTML file to inject in browser mode</td></tr>
-            <tr><td><code>controlled_script</code></td><td>string</td><td></td><td>Script that drives windows in controlled mode</td></tr>
-            <tr><td><code>wasm_backend</code></td><td>string</td><td></td><td>Path to <code>.wasm</code> file</td></tr>
-            <tr><td><code>native_features</code></td><td>[]string</td><td></td><td><code>fs</code>, <code>os</code>, <code>dialogs</code>, <code>canvas</code></td></tr>
-            <tr><td><code>js_inject</code></td><td>[]string</td><td></td><td>CDN/local URLs injected as <code>&lt;script&gt;</code> on every load</td></tr>
-            <tr><td><code>mac_app</code></td><td>object</td><td></td><td>macOS bundle config (icon, files, env, extra_binaries)</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3>Environment variables</h3>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Variable</th><th>Effect</th></tr></thead>
-          <tbody>
-            <tr><td><code>WINDOW_PORT</code></td><td>Fix the local HTTP server port (default: random free port)</td></tr>
-            <tr><td><code>DEBUG=1</code></td><td>Enable Go HTTP request logging to stdout</td></tr>
-            <tr><td><code>DEV_MODE=1</code></td><td>Start HTTP server only — don't open a window (great for testing)</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ── CLI ───────────────────────────────────────────────────────── -->
-    <section id="cli">
-      <h2><div class="section-icon">$</div>CLI Reference</h2>
-      <p class="lead">The <code>window</code> binary accepts a config path or one of the flags below.</p>
-<pre><code class="language-bash">window [flags | path]</code></pre>
-
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Command</th><th>Description</th></tr></thead>
-          <tbody>
-            <tr><td><code>window path/to/window.yaml</code></td><td>Run app from YAML config</td></tr>
-            <tr><td><code>window path/to/window.json</code></td><td>Run app from JSON config</td></tr>
-            <tr><td><code>window /path/to/file.md</code></td><td>Quick-view any file (auto-wraps in minimal config)</td></tr>
-            <tr><td><code>window --version</code></td><td>Print version and exit</td></tr>
-            <tr><td><code>window --init [dir]</code></td><td>Scaffold a new project (default: current directory)</td></tr>
-            <tr><td><code>window --mac-app [config]</code></td><td>Build a macOS <code>.app</code> bundle (macOS only)</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3><code>--init</code></h3>
-<pre><code class="language-bash">window --init myapp
-# Creates:
-# myapp/window.yaml
-# myapp/static/index.html</code></pre>
-
-      <h3><code>--mac-app</code></h3>
-<pre><code class="language-yaml"># window.yaml
-mac_app:
-  icon: icon.icns
-  extra_binaries:
-    - python3
-  files:
-    - ./static
-    - ./window.yaml
-  env:
-    MY_API_KEY: "secret"</code></pre>
-<pre><code class="language-bash">window --mac-app window.yaml
-# → MyApp.app/</code></pre>
-    </section>
-
-    <!-- ── Native Features ───────────────────────────────────────────── -->
-    <section id="native">
-      <h2><div class="section-icon">🖥</div>Native Features</h2>
-      <p class="lead">Expose file system, OS, dialog, and canvas APIs to the frontend — no backend process needed.</p>
-<pre><code class="language-yaml">native_features:
-  - fs       # NATIVE.fs.readFile / writeFile / readDir / watchFile
-  - os       # NATIVE.os.exec / getEnv / platform / info
-  - dialogs  # NATIVE.dialogs.openFile / saveFile / showMessage
-  - canvas   # NATIVE.canvas.drawRect / drawText / clear</code></pre>
-
-      <h3>File System — <code>NATIVE.fs</code></h3>
-<pre><code class="language-javascript">// Read a file as UTF-8 string
-const text = await window.NATIVE.fs.readFile("/path/to/file.txt")
-
-// Write a file (perm: Unix file mode, e.g. 420 = 0o644)
-await window.NATIVE.fs.writeFile("/path/to/out.txt", "hello", 420)
-
-// List directory → [{name, is_dir, size}]
-const entries = await window.NATIVE.fs.readDir("/home/user/Documents")
-
-// Watch a file for changes
-window.NATIVE.fs.watchFile("/path/to/file", (newContent) => {
-  console.log("changed:", newContent)
-})</code></pre>
-
-      <h3>OS — <code>NATIVE.os</code></h3>
-<pre><code class="language-javascript">// Execute a command
-const r = await window.NATIVE.os.exec("git", ["log", "--oneline", "-5"])
-console.log(r.stdout)   // stdout string
-console.log(r.stderr)   // stderr string
-console.log(r.error)    // error string (if non-zero exit)
-
-// Environment
-const home = await window.NATIVE.os.getEnv("HOME")
-
-// Platform: "darwin" | "linux" | "windows"
-const plat = await window.NATIVE.os.platform()
-
-// { os: "darwin", arch: "arm64" }
-const info = await window.NATIVE.os.info()</code></pre>
-
-      <h3>Dialogs — <code>NATIVE.dialogs</code></h3>
-<pre><code class="language-javascript">// File picker → string[] of selected paths
-const paths = await window.NATIVE.dialogs.openFile({
-  title: "Open file",
-  multi: false,
-  filters: ["*.txt", "*.md"],
-})
-
-// Save dialog → string path
-const dest = await window.NATIVE.dialogs.saveFile({ title: "Save as…" })
-
-// Notification dialog
-await window.NATIVE.dialogs.showMessage({
-  title: "Done",
-  message: "File saved.",
-  kind: "info",  // "info" | "warn" | "error"
-})</code></pre>
-
-      <h3>Canvas — <code>NATIVE.canvas</code></h3>
-<pre><code class="language-html">&lt;canvas id="c" width="600" height="400"&gt;&lt;/canvas&gt;</code></pre>
-<pre><code class="language-javascript">await window.NATIVE.canvas.drawRect({
-  canvas_id: "c", x: 10, y: 10, w: 200, h: 100,
-  color: "#7c7cff", fill: true,
-})
-await window.NATIVE.canvas.drawText({
-  canvas_id: "c", x: 10, y: 150,
-  text: "Hello canvas", font: "20px sans-serif", color: "#fff",
-})
-await window.NATIVE.canvas.clear("c")</code></pre>
-    </section>
-
-    <!-- ── Backend Protocol ──────────────────────────────────────────── -->
-    <section id="backend">
-      <h2><div class="section-icon">⇄</div>Backend Protocol</h2>
-      <p class="lead">Any language that can connect to a Unix socket and read/write newline-delimited JSON can be a backend.</p>
-
-      <h3>How it works</h3>
-      <ol style="margin:12px 0 20px;padding-left:20px;color:var(--text-dim)">
-        <li style="margin-bottom:8px">Go creates a Unix socket and sets <code>WINDOW_SOCK_PATH</code> in the subprocess env.</li>
-        <li style="margin-bottom:8px">The subprocess connects to the socket.</li>
-        <li>Both sides exchange newline-delimited JSON messages.</li>
-      </ol>
-
-      <h3>Message format</h3>
-<pre><code class="language-javascript">// Every message (both directions):
-{
-  "id":       "uuid",          // correlation ID
-  "function": "handlerName",   // function / event name
-  "data":     { ... },         // JSON payload
-  "done":     true,            // true = final reply for this request
-  "type":     "data",          // "data" | "eval"
-  "code":     ""               // JS to eval when type == "eval"
-}</code></pre>
-
-      <h3>Frontend JS API</h3>
-<pre><code class="language-javascript">// Call a backend function
-BACKEND.call("add", { value: 5 }, ({ data, err }) => {
-  if (err) { console.error(err); return; }
-  console.log(data.value) // 6
-})
-
-// Subscribe to server-push events
-BACKEND.onEvent("timer", ({ current_time }) => {
-  document.getElementById("clock").textContent = current_time
-})</code></pre>
-
-      <h3>Python client</h3>
-      <p>Copy <code>demos/counter/client.py</code> into your project:</p>
-<pre><code class="language-python">from client import App, ResponseWriter
-import asyncio
-
-app = App()
-
-@app.handle("add")
-async def add(req, rw):
-    await rw.send({"value": req["value"] + 1})
-
-# Push events to all frontends
-async def tick():
-    import time
-    while True:
-        await asyncio.sleep(1)
-        await app.publish("timer", {"current_time": time.strftime("%H:%M:%S")})
-
-async def main():
-    await app.run()
-    asyncio.create_task(tick())
-    await asyncio.Event().wait()
-
-asyncio.run(main())</code></pre>
-
-      <h3>Minimal Node.js backend</h3>
-<pre><code class="language-javascript">const net = require('net')
-const client = net.connect(process.env.WINDOW_SOCK_PATH, () => {
-  client.on('data', buf => {
-    const msg = JSON.parse(buf)
-    const reply = { id: msg.id, function: msg.function,
-                    data: { result: 'ok' }, done: true }
-    client.write(JSON.stringify(reply) + '\n')
-  })
-})</code></pre>
-
-      <h3>Server push</h3>
-      <p>Send messages with an ID that starts with <code>server:</code> to push events to the frontend without a request:</p>
-<pre><code class="language-python">await app.publish("notification", {"text": "Build complete!"})</code></pre>
-    </section>
-
-    <!-- ── WASM Backend ───────────────────────────────────────────────── -->
-    <section id="wasm">
-      <h2><div class="section-icon">◈</div>WASM Backend</h2>
-      <p class="lead">Compile your backend to WebAssembly and ship it as a single binary — no subprocess, no socket, no runtime.</p>
-<pre><code class="language-yaml">mode: wasm
-wasm_backend: ./app.wasm
-entry_path: ./static/index.html</code></pre>
-
-      <h3>Module contract</h3>
-      <p>The <code>.wasm</code> module must export exactly two functions:</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Export</th><th>Signature</th><th>Description</th></tr></thead>
-          <tbody>
-            <tr><td><code>alloc</code></td><td><code>(size i32) → i32</code></td><td>Allocate bytes; return pointer. Used by Go to write data before calling <code>handle</code>.</td></tr>
-            <tr><td><code>handle</code></td><td><code>(fn_ptr, fn_len, data_ptr, data_len i32) → i64</code></td><td>Process a request. Returns packed <code>resp_ptr &lt;&lt; 32 | resp_len</code>.</td></tr>
-            <tr><td><code>init</code></td><td><code>() → void</code> (optional)</td><td>Called once at module load. Use for global initialization.</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3>TinyGo example</h3>
-<pre><code class="language-go">package main
-
-import (
-    "encoding/json"
-    "unsafe"
-)
-
-var buf [1 &lt;&lt; 20]byte
-var heap [1 &lt;&lt; 20]byte
-var heapOff uintptr
-
-//export alloc
-func alloc(size int32) uintptr {
-    ptr := uintptr(unsafe.Pointer(&amp;heap[heapOff]))
-    heapOff += uintptr(size)
-    return ptr
-}
-
-//export handle
-func handle(fnPtr, fnLen, dataPtr, dataLen int32) int64 {
-    fn := string(unsafe.Slice((*byte)(unsafe.Pointer(uintptr(fnPtr))), fnLen))
-    data := unsafe.Slice((*byte)(unsafe.Pointer(uintptr(dataPtr))), dataLen)
-    var req map[string]any
-    json.Unmarshal(data, &amp;req)
-
-    var resp map[string]any
-    switch fn {
-    case "add":
-        v, _ := req["value"].(float64)
-        resp = map[string]any{"value": v + 1}
-    default:
-        resp = map[string]any{"error": "unknown: " + fn}
-    }
-
-    b, _ := json.Marshal(resp)
-    copy(buf[:], b)
-    ptr := uintptr(unsafe.Pointer(&amp;buf[0]))
-    return int64(ptr)&lt;&lt;32 | int64(len(b))
-}
-
-func main() {}</code></pre>
-<pre><code class="language-bash">tinygo build -o app.wasm -target wasi ./main.go</code></pre>
-
-      <div class="callout">
-        <span class="ci">ℹ</span>
-        <span>The WASM runtime is <a href="https://wazero.io" target="_blank">wazero</a> — pure Go, no CGo, no external runtimes. WASI preview1 is instantiated automatically. Server-push events (<code>BACKEND.onEvent</code>) are not available in WASM mode — use polling instead.</span>
-      </div>
-    </section>
-
-    <!-- ── Controlled Mode ────────────────────────────────────────────── -->
-    <section id="controlled">
-      <h2><div class="section-icon">◎</div>Controlled Mode</h2>
-      <p class="lead">Let a backend script create, navigate, eval JS in, and destroy windows programmatically.</p>
-<pre><code class="language-yaml">mode: controlled
-controlled_script: python3 controller.py</code></pre>
-
-      <h3>Command protocol</h3>
-      <p>Go starts the script and sets <code>WINDOW_CONTROL_SOCK_PATH</code>. The script connects and sends commands:</p>
-<pre><code class="language-javascript">// create_window
-{"cmd":"create_window","id":"r1","params":{"title":"T","url":"https://x.com","width":800,"height":600}}
-// → {"id":"r1","window_id":"win1"}
-
-// navigate
-{"cmd":"navigate","id":"r2","window_id":"win1","url":"https://y.com"}
-
-// eval
-{"cmd":"eval","id":"r3","window_id":"win1","js":"document.title='hi'"}
-
-// close
-{"cmd":"close","id":"r4","window_id":"win1"}</code></pre>
-
-      <h3>Python WindowManager</h3>
-<pre><code class="language-python">import asyncio, json, os, uuid
-
-class WindowManager:
-    def __init__(self):
-        self.sock_path = os.getenv("WINDOW_CONTROL_SOCK_PATH")
-        self.reader = self.writer = None
-        self._pending = {}
-
-    async def connect(self):
-        for _ in range(20):
-            try:
-                self.reader, self.writer = await asyncio.open_unix_connection(self.sock_path)
-                asyncio.create_task(self._recv_loop())
-                return
-            except (FileNotFoundError, ConnectionRefusedError):
-                await asyncio.sleep(0.2)
-        raise RuntimeError("could not connect to control socket")
-
-    async def _recv_loop(self):
-        async for line in self.reader:
-            msg = json.loads(line)
-            if (fut := self._pending.pop(msg.get("id"), None)):
-                fut.set_result(msg)
-
-    async def _send(self, cmd):
-        cmd["id"] = uuid.uuid4().hex
-        fut = asyncio.get_event_loop().create_future()
-        self._pending[cmd["id"]] = fut
-        self.writer.write((json.dumps(cmd) + "\n").encode())
-        return await asyncio.wait_for(fut, 5)
-
-    async def create_window(self, title, url, width=800, height=600):
-        r = await self._send({"cmd":"create_window",
-                               "params":{"title":title,"url":url,"width":width,"height":height}})
-        return r["window_id"]
-
-    async def navigate(self, win_id, url):
-        await self._send({"cmd":"navigate","window_id":win_id,"url":url})
-
-    async def eval(self, win_id, js):
-        await self._send({"cmd":"eval","window_id":win_id,"js":js})
-
-    async def close(self, win_id):
-        await self._send({"cmd":"close","window_id":win_id})
-
-
-async def main():
-    wm = WindowManager()
-    await wm.connect()
-    win = await wm.create_window("Hello", "https://example.com", 700, 500)
-    await asyncio.sleep(2)
-    await wm.eval(win, "document.body.style.background='navy'")
-    await asyncio.sleep(2)
-    await wm.close(win)
-
-asyncio.run(main())</code></pre>
-
-      <div class="callout">
-        <span class="ci">⚠</span>
-        <span>Multiple simultaneous windows work best on Linux (GTK). macOS (Cocoa) has threading constraints that may cause unexpected behaviour with multiple webview instances.</span>
-      </div>
-    </section>
-
-    <!-- ── Building ───────────────────────────────────────────────────── -->
-    <section id="building">
-      <h2><div class="section-icon">⚒</div>Building from Source</h2>
-      <p class="lead">Requires Go 1.21+ and a C compiler (CGo is used for the native webview bindings).</p>
-<pre><code class="language-bash">git clone https://github.com/luowensheng/window
-cd window
-go build -o window .</code></pre>
-
-      <h3>Platform dependencies</h3>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Platform</th><th>Requirements</th></tr></thead>
-          <tbody>
-            <tr><td>macOS</td><td>Xcode command-line tools (<code>xcode-select --install</code>)</td></tr>
-            <tr><td>Linux</td><td><code>libgtk-3-dev libwebkit2gtk-4.0-dev</code> (or <code>4.1-dev</code>)</td></tr>
-            <tr><td>Windows</td><td>WebView2 Runtime (ships with Edge / Windows 11)</td></tr>
-          </tbody>
-        </table>
-      </div>
-<pre><code class="language-bash"># Linux
-sudo apt install libgtk-3-dev libwebkit2gtk-4.0-dev
-
-# macOS
-xcode-select --install</code></pre>
-
-      <h3>Project structure</h3>
-<pre><code class="language-bash">webview_gui/
-├── main.go                  # 10-line entry point
-├── appio/                   # CLI + config loading
-├── domain/                  # Pure data types
-├── features/                # Capability interfaces (structs of functions)
-├── infra/                   # OS implementations
-│   ├── native/              # fs, os, dialogs
-│   └── wasm/                # wazero WASM runtime
-├── orchestrator/            # Wiring
-│   ├── features/            # Factory functions
-│   └── usecases/            # Run-mode functions
-├── assets/                  # Embedded JS + YAML
-└── demos/                   # Example apps</code></pre>
-    </section>
-
-    <footer>
-      <span>window v1.2.0 — MIT License</span>
-      <span>
-        <a href="https://github.com/luowensheng/window" target="_blank">GitHub</a> ·
-        Built with native webview bindings
-      </span>
-    </footer>
-
+    <div>
+      <svg class="shot" viewBox="0 0 560 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Photo Booth app">
+        <rect width="560" height="400" rx="13" fill="#1c2128" stroke="#30363d"/>
+        <rect width="560" height="38" rx="13" fill="#161b22"/><rect y="14" width="560" height="24" fill="#161b22"/>
+        <circle cx="20" cy="19" r="6" fill="#ff5f57"/><circle cx="40" cy="19" r="6" fill="#febc2e"/><circle cx="60" cy="19" r="6" fill="#28c840"/>
+        <text x="280" y="24" text-anchor="middle" font-family="system-ui" font-size="13" fill="#8b949e">Photo Booth</text>
+        <text x="280" y="74" text-anchor="middle" font-family="system-ui" font-size="17" font-weight="700" fill="#e6edf3">📸 Photo Booth</text>
+        <rect x="120" y="92" width="320" height="200" rx="12" fill="#0a0d12" stroke="#30363d"/>
+        <circle cx="280" cy="178" r="46" fill="none" stroke="#7c7cff" stroke-width="3"/>
+        <circle cx="280" cy="160" r="17" fill="#7c7cff" opacity=".85"/>
+        <path d="M250 205 q30 -34 60 0" fill="#7c7cff" opacity=".85"/>
+        <rect x="132" y="104" width="74" height="20" rx="6" fill="#161b22"/>
+        <circle cx="145" cy="114" r="4" fill="#ff5f57"/><text x="156" y="118" font-family="system-ui" font-size="11" fill="#8b949e">LIVE</text>
+        <rect x="216" y="320" width="128" height="40" rx="9" fill="#7c7cff"/>
+        <text x="280" y="345" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="600" fill="#fff">Take photo</text>
+        <text x="280" y="384" text-anchor="middle" font-family="system-ui" font-size="11" fill="#6e7681">camera + speech + input · no backend</text>
+      </svg>
+    </div>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-<script>
-// Sidebar mobile
-function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
-function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+<!-- ───────────────────────── HOW IT WORKS ───────────────────────── -->
+<section id="how">
+  <div class="wrap">
+    <div class="eyebrow">how it works</div>
+    <h2>A config in. A native window out.</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 760 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="window.yaml flows into the window binary which opens a native window">
+        <defs>
+          <marker id="ah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+            <path d="M0 0 L7 3 L0 6 z" fill="#7c7cff"/>
+          </marker>
+        </defs>
 
-// Active nav on scroll
-const sections = document.querySelectorAll('section[id], .hero[id]');
-const navLinks = document.querySelectorAll('.nav-link');
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      navLinks.forEach(a => a.classList.remove('active'));
-      const active = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
-      if (active) active.classList.add('active');
-    }
-  });
-}, { rootMargin: '-20% 0px -70% 0px' });
-sections.forEach(s => observer.observe(s));
+        <!-- 1. window.yaml -->
+        <rect x="20" y="64" width="170" height="112" rx="12" fill="#161b22" stroke="#30363d"/>
+        <rect x="44" y="86" width="122" height="10" rx="3" fill="#3fb950"/>
+        <rect x="44" y="104" width="100" height="7" rx="3" fill="#30363d"/>
+        <rect x="44" y="118" width="118" height="7" rx="3" fill="#30363d"/>
+        <rect x="44" y="132" width="84" height="7" rx="3" fill="#7c7cff"/>
+        <text x="105" y="164" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#8b949e">window.yaml</text>
 
-// Close sidebar on nav click (mobile)
-navLinks.forEach(a => a.addEventListener('click', closeSidebar));
-</script>
+        <!-- arrow -->
+        <line x1="196" y1="120" x2="288" y2="120" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+
+        <!-- 2. window binary -->
+        <rect x="295" y="64" width="170" height="112" rx="12" fill="#1c2128" stroke="#7c7cff"/>
+        <circle cx="380" cy="112" r="26" fill="none" stroke="#7c7cff" stroke-width="3"/>
+        <circle cx="380" cy="112" r="8" fill="#7c7cff"/>
+        <g stroke="#7c7cff" stroke-width="3">
+          <line x1="380" y1="78" x2="380" y2="88"/><line x1="380" y1="136" x2="380" y2="146"/>
+          <line x1="346" y1="112" x2="356" y2="112"/><line x1="404" y1="112" x2="414" y2="112"/>
+        </g>
+        <text x="380" y="164" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">window</text>
+
+        <!-- arrow -->
+        <line x1="471" y1="120" x2="563" y2="120" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+
+        <!-- 3. native window -->
+        <rect x="570" y="64" width="170" height="112" rx="12" fill="#1c2128" stroke="#30363d"/>
+        <rect x="570" y="64" width="170" height="22" rx="12" fill="#0a0d12"/><rect x="570" y="75" width="170" height="11" fill="#0a0d12"/>
+        <circle cx="584" cy="75" r="3.5" fill="#ff5f57"/><circle cx="596" cy="75" r="3.5" fill="#febc2e"/><circle cx="608" cy="75" r="3.5" fill="#28c840"/>
+        <rect x="586" y="100" width="138" height="58" rx="6" fill="#0d1117"/>
+        <rect x="600" y="114" width="60" height="8" rx="3" fill="#7c7cff"/>
+        <rect x="600" y="130" width="100" height="6" rx="3" fill="#30363d"/>
+        <rect x="600" y="142" width="80" height="6" rx="3" fill="#30363d"/>
+        <text x="655" y="170" text-anchor="middle" font-family="system-ui" font-size="11" fill="#6e7681" opacity="0">native window</text>
+
+        <!-- backend chip under binary -->
+        <line x1="380" y1="176" x2="380" y2="204" stroke="#30363d" stroke-width="2" stroke-dasharray="3 3"/>
+        <rect x="276" y="204" width="208" height="30" rx="15" fill="#0a0d12" stroke="#30363d"/>
+        <text x="380" y="223" text-anchor="middle" font-family="system-ui" font-size="12" fill="#8b949e">backend: Python · WASM · or none</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────── NATIVE HUB ───────────────────── -->
+<section id="capabilities">
+  <div class="wrap">
+    <div class="eyebrow">new in v1.2 · device capabilities</div>
+    <h2>Everything the machine can do, in one place</h2>
+    <p class="sub">Flip a switch in <code>window.yaml</code>; it all hangs off
+      <code>window.NATIVE</code> — ready before your page loads.</p>
+
+    <div class="diagram" style="max-width:640px">
+      <svg viewBox="0 0 620 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="window.NATIVE hub with camera, mic, speech, screen, input, fs, os, dialogs and canvas branches">
+        <!-- spokes -->
+        <g stroke="#30363d" stroke-width="2">
+          <line x1="310" y1="195" x2="310" y2="45"/>
+          <line x1="310" y1="195" x2="406" y2="80"/>
+          <line x1="310" y1="195" x2="458" y2="169"/>
+          <line x1="310" y1="195" x2="440" y2="270"/>
+          <line x1="310" y1="195" x2="361" y2="336"/>
+          <line x1="310" y1="195" x2="259" y2="336"/>
+          <line x1="310" y1="195" x2="180" y2="270"/>
+          <line x1="310" y1="195" x2="162" y2="169"/>
+          <line x1="310" y1="195" x2="214" y2="80"/>
+        </g>
+        <!-- new (accent) nodes -->
+        <g font-family="ui-monospace,monospace" font-size="12.5" text-anchor="middle">
+          <g><rect x="268" y="30" width="84" height="30" rx="9" fill="rgba(124,124,255,.16)" stroke="#7c7cff"/><text x="310" y="49" fill="#c8c8ff">📷 camera</text></g>
+          <g><rect x="364" y="65" width="84" height="30" rx="9" fill="rgba(124,124,255,.16)" stroke="#7c7cff"/><text x="406" y="84" fill="#c8c8ff">🎙 mic</text></g>
+          <g><rect x="416" y="154" width="84" height="30" rx="9" fill="rgba(124,124,255,.16)" stroke="#7c7cff"/><text x="458" y="173" fill="#c8c8ff">🔊 speech</text></g>
+          <g><rect x="398" y="255" width="84" height="30" rx="9" fill="rgba(124,124,255,.16)" stroke="#7c7cff"/><text x="440" y="274" fill="#c8c8ff">🖥 screen</text></g>
+          <g><rect x="319" y="321" width="84" height="30" rx="9" fill="rgba(124,124,255,.16)" stroke="#7c7cff"/><text x="361" y="340" fill="#c8c8ff">⌨️ input</text></g>
+          <!-- existing (muted) nodes -->
+          <g><rect x="217" y="321" width="84" height="30" rx="9" fill="#161b22" stroke="#30363d"/><text x="259" y="340" fill="#8b949e">📁 fs</text></g>
+          <g><rect x="138" y="255" width="84" height="30" rx="9" fill="#161b22" stroke="#30363d"/><text x="180" y="274" fill="#8b949e">⚙ os</text></g>
+          <g><rect x="120" y="154" width="84" height="30" rx="9" fill="#161b22" stroke="#30363d"/><text x="162" y="173" fill="#8b949e">🗂 dialogs</text></g>
+          <g><rect x="172" y="65" width="84" height="30" rx="9" fill="#161b22" stroke="#30363d"/><text x="214" y="84" fill="#8b949e">🎨 canvas</text></g>
+        </g>
+        <!-- center -->
+        <circle cx="310" cy="195" r="50" fill="#7c7cff"/>
+        <circle cx="310" cy="195" r="50" fill="none" stroke="#a9a9ff" stroke-width="2"/>
+        <text x="310" y="191" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" font-weight="700" fill="#fff">window</text>
+        <text x="310" y="208" text-anchor="middle" font-family="ui-monospace,monospace" font-size="14" font-weight="700" fill="#fff">.NATIVE</text>
+      </svg>
+    </div>
+
+    <!-- the 5 new capabilities -->
+    <div class="caps">
+      <div class="cap">
+        <svg width="84" height="84" viewBox="0 0 120 120">
+          <rect x="22" y="44" width="76" height="50" rx="9" fill="none" stroke="#7c7cff" stroke-width="3.5"/>
+          <rect x="46" y="32" width="28" height="14" rx="4" fill="none" stroke="#7c7cff" stroke-width="3.5"/>
+          <circle cx="60" cy="69" r="15" fill="none" stroke="#7c7cff" stroke-width="3.5"/>
+          <circle cx="60" cy="69" r="5" fill="#7c7cff"/>
+        </svg>
+        <h3>camera</h3>
+        <span class="one">await NATIVE.camera.<b>snapshot()</b></span>
+      </div>
+      <div class="cap">
+        <svg width="84" height="84" viewBox="0 0 120 120">
+          <rect x="50" y="26" width="20" height="42" rx="10" fill="#7c7cff"/>
+          <path d="M36 60 a24 24 0 0 0 48 0" fill="none" stroke="#7c7cff" stroke-width="3.5"/>
+          <line x1="60" y1="84" x2="60" y2="96" stroke="#7c7cff" stroke-width="3.5"/>
+          <line x1="44" y1="96" x2="76" y2="96" stroke="#7c7cff" stroke-width="3.5"/>
+        </svg>
+        <h3>mic</h3>
+        <span class="one">await NATIVE.mic.<b>record()</b></span>
+      </div>
+      <div class="cap">
+        <svg width="84" height="84" viewBox="0 0 120 120">
+          <path d="M30 50 h16 l18 -15 v50 l-18 -15 h-16 z" fill="#7c7cff"/>
+          <path d="M76 48 a18 18 0 0 1 0 24" fill="none" stroke="#7c7cff" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M86 38 a32 32 0 0 1 0 44" fill="none" stroke="#7c7cff" stroke-width="3.5" stroke-linecap="round"/>
+        </svg>
+        <h3>speech</h3>
+        <span class="one">await NATIVE.speech.<b>say(text)</b></span>
+      </div>
+      <div class="cap">
+        <svg width="84" height="84" viewBox="0 0 120 120">
+          <rect x="24" y="30" width="72" height="50" rx="6" fill="none" stroke="#7c7cff" stroke-width="3.5"/>
+          <line x1="48" y1="92" x2="72" y2="92" stroke="#7c7cff" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="60" y1="80" x2="60" y2="92" stroke="#7c7cff" stroke-width="3.5"/>
+          <circle cx="80" cy="44" r="6" fill="#ff5f57"/>
+        </svg>
+        <h3>screen</h3>
+        <span class="one">await NATIVE.screen.<b>record()</b></span>
+      </div>
+      <div class="cap">
+        <svg width="84" height="84" viewBox="0 0 120 120">
+          <rect x="20" y="42" width="80" height="42" rx="7" fill="none" stroke="#7c7cff" stroke-width="3.5"/>
+          <g fill="#7c7cff"><rect x="30" y="52" width="9" height="9" rx="2"/><rect x="44" y="52" width="9" height="9" rx="2"/><rect x="58" y="52" width="9" height="9" rx="2"/><rect x="72" y="52" width="9" height="9" rx="2"/>
+          <rect x="30" y="66" width="9" height="9" rx="2"/><rect x="44" y="66" width="37" height="9" rx="2"/></g>
+        </svg>
+        <h3>input</h3>
+        <span class="one">NATIVE.input.<b>hotkey('ctrl+s')</b></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────── WHAT YOU CAN BUILD ───────────────────── -->
+<section id="build">
+  <div class="wrap">
+    <div class="eyebrow">use cases</div>
+    <h2>What you can build</h2>
+    <p class="sub">Every tile is a real, runnable demo in the repo.</p>
+
+    <div class="gallery">
+
+      <div class="card">
+        <div class="pic">
+          <svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="190" rx="9" fill="#1c2128"/><rect width="320" height="26" fill="#161b22"/>
+            <circle cx="14" cy="13" r="4" fill="#ff5f57"/><circle cx="28" cy="13" r="4" fill="#febc2e"/><circle cx="42" cy="13" r="4" fill="#28c840"/>
+            <rect x="78" y="40" width="164" height="100" rx="8" fill="#0a0d12" stroke="#30363d"/>
+            <circle cx="160" cy="88" r="24" fill="none" stroke="#7c7cff" stroke-width="2.5"/>
+            <circle cx="160" cy="80" r="8" fill="#7c7cff"/><path d="M145 100 q15 -17 30 0" fill="#7c7cff"/>
+            <rect x="120" y="156" width="80" height="22" rx="6" fill="#7c7cff"/>
+            <text x="160" y="171" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#fff">Take photo</text>
+          </svg>
+        </div>
+        <div class="body"><h3>📸 Photo Booth</h3>
+          <span class="tag">camera</span><span class="tag">speech</span><span class="tag">input</span></div>
+      </div>
+
+      <div class="card">
+        <div class="pic">
+          <svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="190" rx="9" fill="#1c2128"/><rect width="320" height="26" fill="#161b22"/>
+            <circle cx="14" cy="13" r="4" fill="#ff5f57"/><circle cx="28" cy="13" r="4" fill="#febc2e"/><circle cx="42" cy="13" r="4" fill="#28c840"/>
+            <g fill="#7c7cff">
+              <rect x="56" y="74" width="6" height="44" rx="3"/><rect x="72" y="56" width="6" height="80" rx="3"/>
+              <rect x="88" y="88" width="6" height="16" rx="3"/><rect x="104" y="46" width="6" height="100" rx="3"/>
+              <rect x="120" y="80" width="6" height="32" rx="3"/><rect x="136" y="62" width="6" height="68" rx="3"/>
+              <rect x="152" y="88" width="6" height="16" rx="3"/><rect x="168" y="54" width="6" height="84" rx="3"/>
+              <rect x="184" y="76" width="6" height="40" rx="3"/><rect x="200" y="66" width="6" height="60" rx="3"/>
+              <rect x="216" y="84" width="6" height="24" rx="3"/><rect x="232" y="58" width="6" height="76" rx="3"/></g>
+            <rect x="56" y="152" width="208" height="14" rx="4" fill="#21262d"/>
+            <text x="62" y="163" font-family="system-ui" font-size="10" fill="#8b949e">"remember to ship the demo…"</text>
+          </svg>
+        </div>
+        <div class="body"><h3>🎙 Voice Notes</h3>
+          <span class="tag">mic</span><span class="tag">speech</span><span class="tag">fs</span></div>
+      </div>
+
+      <div class="card">
+        <div class="pic">
+          <svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="190" rx="9" fill="#1c2128"/><rect width="320" height="26" fill="#161b22"/>
+            <circle cx="14" cy="13" r="4" fill="#ff5f57"/><circle cx="28" cy="13" r="4" fill="#febc2e"/><circle cx="42" cy="13" r="4" fill="#28c840"/>
+            <rect x="44" y="40" width="232" height="104" rx="8" fill="#0a0d12" stroke="#30363d"/>
+            <rect x="58" y="54" width="120" height="10" rx="3" fill="#30363d"/>
+            <rect x="58" y="72" width="180" height="8" rx="3" fill="#21262d"/><rect x="58" y="88" width="150" height="8" rx="3" fill="#21262d"/>
+            <rect x="58" y="104" width="170" height="8" rx="3" fill="#21262d"/>
+            <circle cx="244" cy="58" r="13" fill="#ff5f57"/><circle cx="244" cy="58" r="5" fill="#fff"/>
+            <text x="160" y="170" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#8b949e">● REC 00:14</text>
+          </svg>
+        </div>
+        <div class="body"><h3>🖥 Screen Recorder</h3>
+          <span class="tag">screen</span></div>
+      </div>
+
+      <div class="card">
+        <div class="pic">
+          <svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="190" rx="9" fill="#1c2128"/><rect width="320" height="26" fill="#161b22"/>
+            <circle cx="14" cy="13" r="4" fill="#ff5f57"/><circle cx="28" cy="13" r="4" fill="#febc2e"/><circle cx="42" cy="13" r="4" fill="#28c840"/>
+            <polyline points="50,136 90,108 130,120 170,78 210,94 250,52 280,68" fill="none" stroke="#58a6ff" stroke-width="2.5"/>
+            <g fill="#7c7cff"><rect x="56" y="146" width="18" height="26" rx="2"/><rect x="92" y="138" width="18" height="34" rx="2"/>
+            <rect x="128" y="128" width="18" height="44" rx="2"/><rect x="164" y="116" width="18" height="56" rx="2"/>
+            <rect x="200" y="142" width="18" height="30" rx="2"/><rect x="236" y="108" width="18" height="64" rx="2"/></g>
+          </svg>
+        </div>
+        <div class="body"><h3>📊 Dashboard</h3>
+          <span class="tag">js_inject</span><span class="tag">Chart.js</span></div>
+      </div>
+
+      <div class="card">
+        <div class="pic">
+          <svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="190" rx="9" fill="#1c2128"/><rect width="320" height="26" fill="#161b22"/>
+            <circle cx="14" cy="13" r="4" fill="#ff5f57"/><circle cx="28" cy="13" r="4" fill="#febc2e"/><circle cx="42" cy="13" r="4" fill="#28c840"/>
+            <rect x="0" y="26" width="108" height="164" fill="#13171e"/>
+            <g font-family="system-ui" font-size="11" fill="#8b949e">
+              <text x="14" y="50">📁 Documents</text><text x="14" y="74">📁 Projects</text>
+              <text x="14" y="98">📁 Pictures</text><text x="14" y="122">📄 notes.md</text><text x="14" y="146">📄 todo.txt</text></g>
+            <g font-family="system-ui" font-size="11" fill="#c9d1d9">
+              <text x="126" y="50">📄 readme.md</text><text x="126" y="74">📄 main.go</text>
+              <text x="126" y="98">📄 window.yaml</text><text x="126" y="122">🖼 logo.png</text></g>
+          </svg>
+        </div>
+        <div class="body"><h3>🗂 File Explorer</h3>
+          <span class="tag">fs</span><span class="tag">no backend</span></div>
+      </div>
+
+      <div class="card">
+        <div class="pic">
+          <svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="190" rx="9" fill="#0a0d12"/><rect width="320" height="26" fill="#161b22"/>
+            <circle cx="14" cy="13" r="4" fill="#ff5f57"/><circle cx="28" cy="13" r="4" fill="#febc2e"/><circle cx="42" cy="13" r="4" fill="#28c840"/>
+            <g font-family="ui-monospace,monospace" font-size="11">
+              <text x="16" y="54" fill="#3fb950">$ uname -a</text><text x="16" y="74" fill="#8b949e">Darwin 25.4.0 arm64</text>
+              <text x="16" y="98" fill="#3fb950">$ ls demos/</text><text x="16" y="118" fill="#8b949e">counter dashboard photobooth</text>
+              <text x="16" y="142" fill="#3fb950">$ <tspan fill="#e6edf3">▋</tspan></text></g>
+          </svg>
+        </div>
+        <div class="body"><h3>⌨️ Terminal</h3>
+          <span class="tag">os</span></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────── QUICK START ───────────────────── -->
+<section id="start">
+  <div class="wrap">
+    <div class="eyebrow">quick start</div>
+    <h2>Three steps to a window</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three steps: scaffold, enable a capability, run">
+        <defs>
+          <marker id="ah2" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#7c7cff"/></marker>
+        </defs>
+
+        <!-- step 1 scaffold -->
+        <circle cx="120" cy="70" r="40" fill="#161b22" stroke="#7c7cff" stroke-width="2"/>
+        <path d="M104 62 h12 l4 5 h16 v18 h-32 z" fill="none" stroke="#7c7cff" stroke-width="2.5"/>
+        <text x="120" y="138" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="#e6edf3">1 · Scaffold</text>
+        <text x="120" y="160" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11.5" fill="#8b949e">window --init myapp</text>
+
+        <line x1="180" y1="70" x2="300" y2="70" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah2)"/>
+
+        <!-- step 2 enable -->
+        <circle cx="380" cy="70" r="40" fill="#161b22" stroke="#7c7cff" stroke-width="2"/>
+        <rect x="360" y="60" width="40" height="20" rx="10" fill="#0a0d12" stroke="#7c7cff" stroke-width="2"/>
+        <circle cx="390" cy="70" r="7" fill="#7c7cff"/>
+        <text x="380" y="138" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="#e6edf3">2 · Enable</text>
+        <text x="380" y="160" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11.5" fill="#8b949e">native_features: [camera]</text>
+
+        <line x1="440" y1="70" x2="560" y2="70" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah2)"/>
+
+        <!-- step 3 run -->
+        <circle cx="640" cy="70" r="40" fill="#7c7cff"/>
+        <path d="M630 56 L658 70 L630 84 z" fill="#fff"/>
+        <text x="640" y="138" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="#e6edf3">3 · Run</text>
+        <text x="640" y="160" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11.5" fill="#8b949e">window window.yaml</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────── RUN MODES ───────────────────── -->
+<section id="modes">
+  <div class="wrap">
+    <div class="eyebrow">flexibility</div>
+    <h2>Bring any backend — or none</h2>
+    <div class="modes">
+      <div class="mode">
+        <svg class="ico" width="34" height="34" viewBox="0 0 34 34"><rect x="4" y="6" width="26" height="8" rx="2" fill="none" stroke="#58a6ff" stroke-width="2"/><rect x="4" y="20" width="26" height="8" rx="2" fill="none" stroke="#58a6ff" stroke-width="2"/><circle cx="9" cy="10" r="1.6" fill="#3fb950"/><circle cx="9" cy="24" r="1.6" fill="#3fb950"/></svg>
+        <div><b>server</b><p>HTTP + any subprocess backend</p></div>
+      </div>
+      <div class="mode">
+        <svg class="ico" width="34" height="34" viewBox="0 0 34 34"><rect x="5" y="5" width="24" height="24" rx="5" fill="none" stroke="#58a6ff" stroke-width="2"/><text x="17" y="22" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" font-weight="700" fill="#58a6ff">WA</text></svg>
+        <div><b>wasm</b><p>Zero-dependency WASM backend</p></div>
+      </div>
+      <div class="mode">
+        <svg class="ico" width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="12" fill="none" stroke="#58a6ff" stroke-width="2"/><circle cx="17" cy="17" r="4" fill="#58a6ff"/><line x1="17" y1="5" x2="17" y2="11" stroke="#58a6ff" stroke-width="2"/></svg>
+        <div><b>controlled</b><p>Backend drives the windows</p></div>
+      </div>
+      <div class="mode">
+        <svg class="ico" width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="12" fill="none" stroke="#58a6ff" stroke-width="2"/><ellipse cx="17" cy="17" rx="5" ry="12" fill="none" stroke="#58a6ff" stroke-width="2"/><line x1="5" y1="17" x2="29" y2="17" stroke="#58a6ff" stroke-width="2"/></svg>
+        <div><b>url</b><p>Point straight at a remote URL</p></div>
+      </div>
+      <div class="mode">
+        <svg class="ico" width="34" height="34" viewBox="0 0 34 34"><path d="M7 12 h14 M7 22 h14" stroke="#58a6ff" stroke-width="2"/><path d="M21 8 l6 4 -6 4 M21 18 l6 4 -6 4" fill="none" stroke="#58a6ff" stroke-width="2"/></svg>
+        <div><b>proxy</b><p>Wrap an existing dev server</p></div>
+      </div>
+      <div class="mode">
+        <svg class="ico" width="34" height="34" viewBox="0 0 34 34"><rect x="5" y="7" width="24" height="20" rx="3" fill="none" stroke="#58a6ff" stroke-width="2"/><rect x="5" y="7" width="24" height="6" rx="3" fill="#58a6ff" opacity=".4"/><rect x="12" y="16" width="14" height="7" rx="2" fill="#58a6ff" opacity=".5"/></svg>
+        <div><b>browser</b><p>Inject an overlay into any page</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>window · native desktop apps from a YAML file · MIT</span>
+    <span class="links">
+      <a href="https://github.com/luowensheng/window">GitHub</a>
+      <a href="https://github.com/luowensheng/window/blob/main/docs/device-capabilities.md">Device capabilities</a>
+      <a href="https://github.com/luowensheng/window/blob/main/docs/configuration.md">Configuration</a>
+    </span>
+  </div>
+</footer>
+
 </body>
 </html>

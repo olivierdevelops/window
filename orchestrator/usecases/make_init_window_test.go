@@ -226,6 +226,41 @@ func TestMakeInitWindow_NativeCanvas_BindsAll(t *testing.T) {
 	}
 }
 
+func TestMakeInitWindow_JSOnlyFeatures_InjectShims(t *testing.T) {
+	cases := []struct {
+		feature domain.NativeFeature
+		js      []byte
+		marker  string
+	}{
+		{domain.NativeCamera, assets.NativeCameraJS, "NATIVE.camera"},
+		{domain.NativeMic, assets.NativeMicJS, "NATIVE.mic"},
+		{domain.NativeSpeech, assets.NativeSpeechJS, "NATIVE.speech"},
+		{domain.NativeScreen, assets.NativeScreenJS, "NATIVE.screen"},
+		{domain.NativeInput, assets.NativeInputJS, "NATIVE.input"},
+	}
+	for _, tc := range cases {
+		if len(tc.js) == 0 {
+			t.Fatalf("embed for %q is empty", tc.feature)
+		}
+		r := &recorder{}
+		initFn := MakeInitWindow(fakeWin(r), fakeBridge(r))
+		cfg := &domain.AppConfig{NativeFeatures: []domain.NativeFeature{tc.feature}}
+		if err := initFn("h", cfg); err != nil {
+			t.Fatalf("initFn(%q): %v", tc.feature, err)
+		}
+		found := false
+		for _, js := range r.inits {
+			if strings.Contains(js, tc.marker) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("feature %q did not inject a shim containing %q", tc.feature, tc.marker)
+		}
+	}
+}
+
 func TestMakeInitWindow_CALL_BACKEND_Registered(t *testing.T) {
 	r := &recorder{}
 	win := fakeWin(r)

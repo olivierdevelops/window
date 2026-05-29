@@ -49,6 +49,11 @@ static_dirs:
 #   - os       # NATIVE.os.exec / getEnv / platform / info
 #   - dialogs  # NATIVE.dialogs.openFile / saveFile / showMessage
 #   - canvas   # NATIVE.canvas.drawRect / drawText / clear / flush
+#   - camera   # NATIVE.camera.snapshot / stream / record / list / stop
+#   - mic      # NATIVE.mic.record / stream / meter / list / stop
+#   - speech   # NATIVE.speech.say / voices / stop / listen  (TTS + STT)
+#   - screen   # NATIVE.screen.snapshot / record / stream / stop
+#   - input    # NATIVE.input.hotkey / onKey / onMouse / pointer
 
 # ── JS library injection ──────────────────────────────────────────────────────
 # Injected as <script src="..."> on every page load
