@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="The .window app language — write a whole native desktop app in one declarative file. Transpiled by the Capy engine, served by one binary with in-process Go handlers. Full reference + 34 demos." />
+<title>.window — window's app language</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#7c7cff;--accent2:#58a6ff;--green:#3fb950;--red:#ff5f57;--yellow:#febc2e}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;font-size:15px}
+  a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:"SF Mono","Fira Code",ui-monospace,monospace}
+  svg{display:block;max-width:100%;height:auto}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  header.top{position:sticky;top:0;z-index:60;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  header.top .wrap{display:flex;align-items:center;gap:20px;height:58px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.3px}
+  .brand .mark{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+  header.top nav{margin-left:auto;display:flex;gap:22px;font-size:14px}
+  header.top nav a{color:var(--muted)}header.top nav a:hover{color:var(--text);text-decoration:none}
+  @media(max-width:680px){header.top nav{display:none}}
+
+  .hero{padding:56px 0 40px;border-bottom:1px solid var(--border);background:radial-gradient(900px 360px at 75% -10%,rgba(124,124,255,.16),transparent)}
+  .badge{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(124,124,255,.35);background:rgba(124,124,255,.12);color:var(--accent);border-radius:999px;padding:4px 12px;font-size:12px;margin-bottom:16px}
+  h1{font-size:2.6rem;line-height:1.08;letter-spacing:-1.4px;font-weight:800;margin-bottom:12px}
+  h1 code{font-size:2.6rem;color:var(--accent)}
+  .hero p.lead{color:var(--muted);font-size:1.06rem;max-width:680px;margin-bottom:20px}
+  .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:9px;font-weight:600;font-size:14px;border:1px solid transparent}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:var(--bg2);border-color:var(--border);color:var(--text)}
+  .btn:hover{transform:translateY(-1px);text-decoration:none}
+
+  section{padding:48px 0;border-bottom:1px solid var(--border)}
+  .eyebrow{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+  h2{font-size:1.6rem;letter-spacing:-.5px;margin-bottom:10px}
+  h3{font-size:1.1rem;margin:24px 0 8px}
+  p{color:var(--muted);margin-bottom:12px}
+  p strong,li strong{color:var(--text)}
+  ul{color:var(--muted);margin:0 0 12px 20px}li{margin-bottom:5px}
+  .lead-p{font-size:1.04rem;color:var(--muted);margin-bottom:16px;max-width:760px}
+
+  .code{position:relative;background:#0a0d12;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:12px 0}
+  .code .cap{padding:7px 14px;border-bottom:1px solid var(--border);font:12px ui-monospace,monospace;color:var(--muted);display:flex;gap:8px;align-items:center}
+  .code .cap .d{width:9px;height:9px;border-radius:50%}
+  .code pre{padding:14px 16px;overflow-x:auto}
+  .code code{font:12.5px/1.7 ui-monospace,monospace;color:#c9d1d9;white-space:pre}
+  .out{background:rgba(63,185,80,.05);border:1px solid rgba(63,185,80,.25);border-left:3px solid var(--green);border-radius:8px;padding:11px 14px;margin:12px 0}
+  .out .lbl{font:11px/1 ui-monospace,monospace;letter-spacing:.6px;color:var(--green);font-weight:700;display:block;margin-bottom:7px}
+  .out code{font:12.5px/1.6 ui-monospace,monospace;color:#aeb6c0;white-space:pre}
+
+  .sheet{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0}
+  .sheet th{text-align:left;padding:9px 12px;border-bottom:2px solid var(--border);color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+  .sheet td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  .sheet tr:hover td{background:var(--bg2)}
+  .sheet td:first-child{color:var(--text);white-space:nowrap}
+  .sheet code{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:12px;color:var(--accent2)}
+  .scroll{overflow-x:auto}
+
+  .diagram{margin:20px 0;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px}
+  .demos{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+  @media(max-width:760px){.demos{grid-template-columns:1fr}}
+  .demo{background:var(--bg2);border:1px solid var(--border);border-radius:13px;overflow:hidden}
+  .demo .dh{padding:14px 16px 4px}
+  .demo .dh b{font-size:1rem}.demo .dh p{font-size:12.5px;margin:4px 0 8px}
+  .tag{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:999px;background:rgba(124,124,255,.1);border:1px solid rgba(124,124,255,.3);color:var(--accent);margin:0 4px 6px 0}
+  .demo .code{margin:0;border:none;border-top:1px solid var(--border);border-radius:0}
+  .demo .code .cap{font-size:11px}
+  .run{display:inline-block;font:11.5px ui-monospace,monospace;color:var(--green);background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:4px 9px;margin:10px 16px 14px}
+
+  .catalog{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 24px;margin:16px 0;font-size:13.5px}
+  @media(max-width:680px){.catalog{grid-template-columns:1fr}}
+  .catalog .item{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--border)}
+  .catalog .item code{color:var(--accent2)}
+  .catalog .item span{color:var(--muted);text-align:right}
+  .grpttl{margin-top:20px;color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase}
+
+  footer{padding:30px 0;color:var(--muted);font-size:13px}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><span class="mark">W</span> window <span style="color:var(--muted);font-weight:500;font-size:13px">· .window language</span></div>
+    <nav>
+      <a href="#tour">Tour</a>
+      <a href="#reference">Reference</a>
+      <a href="#handlers">Handlers</a>
+      <a href="#demos">Demos</a>
+      <a href="#catalog">All 34</a>
+      <a href="index.html">← Home</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="wrap">
+    <span class="badge">● one file · one binary · no sidecar</span>
+    <h1>The <code>.window</code> app language</h1>
+    <p class="lead">Describe a whole native desktop app in one declarative file. <code>window
+      app.window</code> transpiles it to a frontend <em>and</em> a <code>window.yaml</code>, then
+      opens it. UI, events and state are generated into the page; any backend call is served
+      <strong>in-process</strong> by Go handlers built into the binary. The transpiler under the
+      hood is the <a href="https://github.com/luowensheng/capy">Capy</a> engine — you never see it.</p>
+    <div class="cta">
+      <a class="btn primary" href="#tour">60-second tour →</a>
+      <a class="btn ghost" href="#catalog">Browse 34 demos</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- HOW IT WORKS -->
+  <section id="how">
+    <div class="eyebrow">how it works</div>
+    <h2>One source, projected into a full app</h2>
+    <p class="lead-p">A single statement contributes to several files at once — markup to the HTML,
+      wiring to the JS, and config to the YAML — so nothing can drift. There is no separate backend
+      process: <code>BACKEND.call(...)</code> dispatches to Go handlers inside the same binary.</p>
+    <div class="diagram">
+      <svg viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A .window source is transpiled into window.yaml and static files, then run by the window binary">
+        <defs><marker id="ah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#7c7cff"/></marker></defs>
+        <rect x="14" y="64" width="150" height="74" rx="11" fill="#161b22" stroke="#7c7cff"/>
+        <text x="89" y="98" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#c8c8ff">app.window</text>
+        <text x="89" y="118" text-anchor="middle" font-family="system-ui" font-size="11" fill="#8b949e">your language</text>
+        <line x1="170" y1="101" x2="226" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="232" y="70" width="120" height="62" rx="11" fill="#1c2128" stroke="#30363d"/>
+        <text x="292" y="98" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">Capy</text>
+        <text x="292" y="116" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6e7681">transpiler</text>
+        <line x1="358" y1="101" x2="414" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="420" y="36" width="180" height="40" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="510" y="61" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#3fb950">window.yaml</text>
+        <rect x="420" y="84" width="180" height="40" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="510" y="109" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#c9d1d9">static/index.html</text>
+        <rect x="420" y="132" width="180" height="40" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="510" y="157" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#c9d1d9">static/app.js</text>
+        <line x1="606" y1="101" x2="662" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="668" y="64" width="138" height="74" rx="11" fill="#1c2128" stroke="#7c7cff"/>
+        <text x="737" y="96" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">window</text>
+        <text x="737" y="116" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6e7681">+ in-process Go</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- TOUR -->
+  <section id="tour">
+    <div class="eyebrow">60-second tour</div>
+    <h2>A reactive counter, start to finish</h2>
+    <p class="lead-p">Declare state, render it, wire two buttons to transitions. No backend, no build
+      step — this is the whole app.</p>
+    <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>counter.window</div>
+<pre><code>app "Counter" 320 240
+    heading "Counter"
+    text count
+    button "−" id dec
+    button "+" id inc
+    state count = 0
+    on "#inc" click do up
+    on "#dec" click do down
+    action up   set count = state.count + 1
+    action down set count = state.count - 1
+end</code></pre></div>
+    <p>Transpiles to a reactive store + event wiring (real output):</p>
+    <div class="code"><div class="cap"><span class="d" style="background:#3fb950"></span>generated static/app.js (excerpt)</div>
+<pre><code>const state = { count: 0 };
+function render(){
+  document.querySelectorAll('[data-bind]').forEach(el => {
+    const v = getp(state, el.dataset.bind);
+    el.textContent = (v == null ? '' : v);
+  });
+}
+function setState(patch){ Object.assign(state, patch); render(); }
+const ACTIONS = {
+  up:   () => setState({ count: state.count + 1 }),
+  down: () => setState({ count: state.count - 1 }),
+};
+document.querySelector("#inc").addEventListener("click", ev => ACTIONS.up && ACTIONS.up(ev));
+render();</code></pre></div>
+    <span class="run">window demos/capy/counter.window</span>
+  </section>
+
+  <!-- REFERENCE -->
+  <section id="reference">
+    <div class="eyebrow">language reference</div>
+    <h2>Every verb</h2>
+
+    <h3>Window &amp; UI</h3>
+    <div class="scroll"><table class="sheet">
+      <thead><tr><th>Statement</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>app "Title" [w] [h] … end</code></td><td>Window title + size; wraps the body</td></tr>
+        <tr><td><code>theme "#color"</code></td><td>Sets the accent color</td></tr>
+        <tr><td><code>heading "text"</code> · <code>subhead</code> · <code>paragraph</code></td><td>Text blocks (HTML-escaped)</td></tr>
+        <tr><td><code>text bind</code></td><td>A span bound to a store field (dotted ok: <code>text clock.time</code>)</td></tr>
+        <tr><td><code>list bind</code></td><td>A &lt;ul&gt; that renders an array store field</td></tr>
+        <tr><td><code>field id placeholder "…"</code></td><td>A text input</td></tr>
+        <tr><td><code>button "Label" id name</code></td><td>A button (wire it with <code>on</code>)</td></tr>
+        <tr><td><code>image bind</code> · <code>divider</code></td><td>An &lt;img&gt; bound to a URL field · a rule</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>State, events &amp; logic</h3>
+    <div class="scroll"><table class="sheet">
+      <thead><tr><th>Statement</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>state name = value</code></td><td>A reactive store field (number, "string", [], {})</td></tr>
+        <tr><td><code>action name set field = expr</code></td><td>A frontend transition; <code>expr</code> is JS over <code>state</code></td></tr>
+        <tr><td><code>on "selector" type do action</code></td><td>Bind a DOM event to an action</td></tr>
+        <tr><td><code>start action</code></td><td>Run an action once on load</td></tr>
+        <tr><td><code>every action ms</code></td><td>Run an action on an interval</td></tr>
+        <tr><td><code>get action handler into field</code></td><td>Call an in-process handler (no args) → store its result</td></tr>
+        <tr><td><code>send action handler into field args { … }</code></td><td>Call an in-process handler with a JS-object payload</td></tr>
+        <tr><td><code>inject "url"</code></td><td>Load a CDN script before the page (<code>js_inject</code>)</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Native capability widgets</h3>
+    <p>Each one drops in markup + behavior and enables the matching <code>native_feature</code>
+      automatically — all frontend, no backend.</p>
+    <div class="scroll"><table class="sheet">
+      <thead><tr><th>Statement</th><th>Feature</th><th>What you get</th></tr></thead>
+      <tbody>
+        <tr><td><code>photobooth</code></td><td>camera</td><td>Live preview + snapshot to a still</td></tr>
+        <tr><td><code>recorder</code></td><td>mic</td><td>Record audio, play it back</td></tr>
+        <tr><td><code>dictate bind</code></td><td>speech</td><td>Speech-to-text into a store field</td></tr>
+        <tr><td><code>speak bind</code></td><td>speech</td><td>Read a store field aloud</td></tr>
+        <tr><td><code>screencast</code></td><td>screen</td><td>Record the screen, download a clip</td></tr>
+        <tr><td><code>sketch id</code></td><td>canvas</td><td>Drag-to-draw on a native canvas</td></tr>
+        <tr><td><code>runner</code></td><td>os</td><td>Run shell commands, show output</td></tr>
+        <tr><td><code>notepad "path"</code></td><td>fs</td><td>Load/save a real file</td></tr>
+        <tr><td><code>filepicker bind</code></td><td>dialogs</td><td>Native open dialog → path in a field</td></tr>
+        <tr><td><code>palette "ctrl+k"</code></td><td>input</td><td>A hotkey-toggled command palette</td></tr>
+        <tr><td><code>chart id</code></td><td>js_inject</td><td>A Chart.js line chart (CDN, no build)</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- HANDLERS -->
+  <section id="handlers">
+    <div class="eyebrow">in-process backend</div>
+    <h2>Built-in Go handlers — no sidecar</h2>
+    <p class="lead-p">Call these from any <code>.window</code> source with <code>get</code> / <code>send</code>.
+      They run inside the <code>window</code> process (see <a href="https://github.com/luowensheng/window/blob/main/infra/handlers.go"><code>infra/handlers.go</code></a>)
+      — no Python, no Node, no socket. Add your own there.</p>
+    <div class="scroll"><table class="sheet">
+      <thead><tr><th>Handler</th><th>Params</th><th>Returns</th></tr></thead>
+      <tbody>
+        <tr><td><code>time</code></td><td>—</td><td><code>{iso, unix, time, date}</code></td></tr>
+        <tr><td><code>uuid</code></td><td>—</td><td><code>{value}</code></td></tr>
+        <tr><td><code>random</code></td><td><code>{max}</code></td><td><code>{value, int}</code></td></tr>
+        <tr><td><code>math</code></td><td><code>{op, a, b}</code></td><td><code>{value}</code> (add/sub/mul/div/pow/mod)</td></tr>
+        <tr><td><code>reverse</code></td><td><code>{text}</code></td><td><code>{value}</code></td></tr>
+        <tr><td><code>sysinfo</code></td><td>—</td><td><code>{os, arch, cpus, hostname, go}</code></td></tr>
+        <tr><td><code>store.set</code> / <code>store.get</code> / <code>store.keys</code></td><td><code>{key, value}</code></td><td>in-memory KV store</td></tr>
+        <tr><td><code>http.get</code></td><td><code>{url}</code></td><td><code>{status, body}</code> — no browser CORS</td></tr>
+        <tr><td><code>echo</code></td><td>any</td><td>the same object</td></tr>
+      </tbody>
+    </table></div>
+    <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>using handlers in a .window source</div>
+<pre><code>state clock = {}
+get tick time into clock            # → BACKEND.call("time")
+start tick
+every tick 1000
+text clock.time                     # live clock, no backend process</code></pre></div>
+    <div class="out"><span class="lbl">generated ACTIONS (real, from http-fetch demo)</span><pre><code>go: () => BACKEND.call("http.get", { url: document.getElementById("url").value },
+      ({ data }) => setState({ resp: data })),</code></pre></div>
+  </section>
+
+  <!-- DEMOS -->
+  <section id="demos">
+    <div class="eyebrow">demos</div>
+    <h2>Source &amp; run, side by side</h2>
+    <p class="lead-p">Real demos from <code>demos/capy/</code>. Each is the whole app.</p>
+    <div class="demos">
+
+      <div class="demo">
+        <div class="dh"><b>📝 Todo</b><p>Reactive list + spread-update.</p><span class="tag">state</span><span class="tag">events</span></div>
+        <div class="code"><div class="cap">todo.window</div>
+<pre><code>app "Todo List" 420 560
+    field draft placeholder "New task…"
+    button "Add" id add
+    list items
+    state items = []
+    on "#add" click do additem
+    action additem set items =
+      [...state.items,
+       document.getElementById('draft').value]
+end</code></pre></div>
+        <span class="run">window demos/capy/todo.window</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>🕐 Clock</b><p>In-process <code>time</code> handler on a 1s interval.</p><span class="tag">get</span><span class="tag">every</span></div>
+        <div class="code"><div class="cap">clock.window</div>
+<pre><code>app "Clock" 320 180
+    heading "Live Clock"
+    text now.time
+    text now.date
+    state now = {}
+    get tick time into now
+    start tick
+    every tick 1000
+end</code></pre></div>
+        <span class="run">window demos/capy/clock.window</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>🧮 Calculator</b><p>In-process <code>math</code> handler.</p><span class="tag">send</span><span class="tag">args</span></div>
+        <div class="code"><div class="cap">calculator.window</div>
+<pre><code>app "Calculator" 360 360
+    field a placeholder "a"
+    field b placeholder "b"
+    button "Add" id add
+    text r.value
+    state r = {}
+    on "#add" click do doadd
+    send doadd math into r args
+      { a: Number(document.getElementById('a').value),
+        b: Number(document.getElementById('b').value),
+        op: 'add' }
+end</code></pre></div>
+        <span class="run">window demos/capy/calculator.window</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>🎲 Dice</b><p>In-process <code>random</code> handler.</p><span class="tag">send</span></div>
+        <div class="code"><div class="cap">dice-roller.window</div>
+<pre><code>app "Dice Roller" 320 240
+    heading "Dice"
+    text roll.int
+    button "Roll" id b
+    state roll = {}
+    on "#b" click do doroll
+    send doroll random into roll args { max: 6 }
+end</code></pre></div>
+        <span class="run">window demos/capy/dice-roller.window</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>📸 Photo Booth</b><p>Camera, in one word.</p><span class="tag">camera</span></div>
+        <div class="code"><div class="cap">photo-booth.window</div>
+<pre><code>app "Photo Booth" 560 620
+    heading "📸 Photo Booth"
+    paragraph "Live preview, capture to a still."
+    photobooth
+end</code></pre></div>
+        <span class="run">window demos/capy/photo-booth.window</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>📊 Chart Dashboard</b><p>Chart.js from a CDN, no build step.</p><span class="tag">js_inject</span></div>
+        <div class="code"><div class="cap">chart-dashboard.window</div>
+<pre><code>app "Chart Dashboard" 660 480
+    heading "📊 Dashboard"
+    paragraph "Chart.js injected from a CDN."
+    chart series
+end</code></pre></div>
+        <span class="run">window demos/capy/chart-dashboard.window</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>🌐 HTTP Fetch</b><p>In-process <code>http.get</code> — no CORS.</p><span class="tag">send</span><span class="tag">http.get</span></div>
+        <div class="code"><div class="cap">http-fetch.window</div>
+<pre><code>app "HTTP Fetch" 560 460
+    field url placeholder "https://api.github.com/zen"
+    button "GET" id b
+    text resp.body
+    state resp = {}
+    on "#b" click do go
+    send go http.get into resp args
+      { url: document.getElementById('url').value }
+end</code></pre></div>
+        <span class="run">window demos/capy/http-fetch.window</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>🗣 Dictation</b><p>Speech-to-text + read aloud.</p><span class="tag">speech</span></div>
+        <div class="code"><div class="cap">dictation.window</div>
+<pre><code>app "Dictation" 480 380
+    heading "🗣 Dictation"
+    dictate notes
+    speak notes
+    text notes
+    state notes = ""
+end</code></pre></div>
+        <span class="run">window demos/capy/dictation.window</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CATALOG -->
+  <section id="catalog">
+    <div class="eyebrow">the full set</div>
+    <h2>All 34 demos</h2>
+    <p class="lead-p">Every one lives under <code>demos/capy/</code>; run with
+      <code>window demos/capy/&lt;name&gt;.window</code>.</p>
+
+    <div class="grpttl">Logic &amp; state (no backend)</div>
+    <div class="catalog">
+      <div class="item"><code>counter</code><span>reactive count + buttons</span></div>
+      <div class="item"><code>todo</code><span>add-to-list</span></div>
+      <div class="item"><code>tip-calculator</code><span>computed total</span></div>
+      <div class="item"><code>temperature-converter</code><span>°C → °F</span></div>
+      <div class="item"><code>bmi-calculator</code><span>weight/height math</span></div>
+      <div class="item"><code>miles-to-km</code><span>unit convert</span></div>
+      <div class="item"><code>stopwatch</code><span>start/stop/reset timer</span></div>
+      <div class="item"><code>countdown</code><span>interval countdown</span></div>
+      <div class="item"><code>word-counter</code><span>live input count</span></div>
+      <div class="item"><code>greeter</code><span>input → message</span></div>
+      <div class="item"><code>star-rating</code><span>append/clear</span></div>
+      <div class="item"><code>brand-colors</code><span>custom theme</span></div>
+    </div>
+
+    <div class="grpttl">In-process backend handlers</div>
+    <div class="catalog">
+      <div class="item"><code>clock</code><span>time + interval</span></div>
+      <div class="item"><code>calculator</code><span>math</span></div>
+      <div class="item"><code>dice-roller</code><span>random</span></div>
+      <div class="item"><code>coin-flip</code><span>random + action</span></div>
+      <div class="item"><code>random-number</code><span>random</span></div>
+      <div class="item"><code>guess-the-number</code><span>random + check</span></div>
+      <div class="item"><code>text-reverser</code><span>reverse</span></div>
+      <div class="item"><code>uuid-generator</code><span>uuid</span></div>
+      <div class="item"><code>password-generator</code><span>uuid token</span></div>
+      <div class="item"><code>system-info</code><span>sysinfo</span></div>
+      <div class="item"><code>key-value-store</code><span>store.set/get</span></div>
+      <div class="item"><code>http-fetch</code><span>http.get (no CORS)</span></div>
+    </div>
+
+    <div class="grpttl">Native device features</div>
+    <div class="catalog">
+      <div class="item"><code>photo-booth</code><span>camera</span></div>
+      <div class="item"><code>voice-recorder</code><span>mic</span></div>
+      <div class="item"><code>dictation</code><span>speech (STT + TTS)</span></div>
+      <div class="item"><code>screen-recorder</code><span>screen</span></div>
+      <div class="item"><code>sketchpad</code><span>canvas</span></div>
+      <div class="item"><code>terminal</code><span>os exec</span></div>
+      <div class="item"><code>notepad</code><span>fs read/write</span></div>
+      <div class="item"><code>file-picker</code><span>dialogs</span></div>
+      <div class="item"><code>command-palette</code><span>input hotkey</span></div>
+      <div class="item"><code>chart-dashboard</code><span>js_inject (Chart.js)</span></div>
+    </div>
+  </section>
+
+  <!-- LEARN MORE -->
+  <section id="learn">
+    <div class="eyebrow">go deeper</div>
+    <h2>Learn more</h2>
+    <ul>
+      <li><a href="https://github.com/luowensheng/window/blob/main/docs/using-capy.md">using-capy.md</a> — install, the model, UI / events / state, in-process Go</li>
+      <li><a href="https://github.com/luowensheng/window/blob/main/docs/capy-full-apps.md">capy-full-apps.md</a> — every feature with a worked demo + the full library</li>
+      <li><a href="https://github.com/luowensheng/window/blob/main/assets/window.capy">assets/window.capy</a> — the language definition (a Capy library)</li>
+      <li><a href="https://github.com/luowensheng/window/tree/main/demos/capy">demos/capy/</a> — all 34 <code>.window</code> sources</li>
+      <li><a href="https://github.com/luowensheng/capy">Capy</a> — the transpiler engine</li>
+    </ul>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>window · the .window app language · MIT</span>
+    <span><a href="index.html">← Home</a> · <a href="https://github.com/luowensheng/window">GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
