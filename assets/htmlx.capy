@@ -1,0 +1,135 @@
+# htmlx.capy — write a `window` app as matched-pair angle-bracket HTML.
+#
+# A .htmlx source is real HTML with `<tag>…</tag>` pairs. The Capy engine
+# parses it with sequence closers (`block_close_seq "</" name ">"`), so a
+# single generic `element` function handles every tag, nesting is validated
+# (a stray `</div>` inside a `<p>` is a hard parse error), and the output is
+# normalized, escaped HTML wrapped in a cross-platform document.
+#
+# Root:  <app title="…" width="…" height="…"> … </app>
+# Body:  any <tag attr="v">…</tag>, self-closing <tag />, quoted "text".
+extension htmlx
+
+# `#` line comments — handy for annotating inline component definitions.
+comments
+    line "#"
+end
+
+context
+    title  "App"
+    width  720
+    height 560
+end
+
+# ── root: <app title="…" width="…" height="…"> … </app> ───────────────
+# Captures window metadata into context and wraps the body in a full,
+# cross-platform HTML document (WebKit / WebView2 / WebKitGTK).
+function app
+    arg literal "<"
+    arg literal "app"
+    arg literal "title"
+    arg literal "="
+    arg capture title raw
+    arg literal "width"
+    arg literal "="
+    arg capture w raw
+    arg literal "height"
+    arg literal "="
+    arg capture h raw
+    arg literal ">"
+    block_close_seq "</" "app" ">"
+    set context.title title
+    set context.width w
+    set context.height h
+    write `<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark light" />
+<title>${escapeHtml title}</title>
+<style>
+  html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; padding:28px; line-height:1.6; background:#0d1117; color:#e6edf3;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  main { max-width:680px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+  h1 { font-size:1.7rem; margin:0; } h2 { font-size:1.2rem; margin:0; }
+  h3 { font-size:1rem; color:#8b949e; margin:0; }
+  p { margin:0; } a { color:#7c7cff; } .muted { color:#8b949e; }
+  p,pre,span,li { overflow-wrap:anywhere; word-break:break-word; }
+  .card { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:18px; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); }
+  .btn,button { background:#7c7cff; color:#fff; border:none; border-radius:9px;
+    padding:10px 18px; font-size:14px; font-weight:600; cursor:pointer; text-decoration:none;
+    display:inline-block; -webkit-appearance:none; appearance:none; }
+  .btn:hover,button:hover { opacity:.9; }
+  input,textarea,select { font-family:inherit; -webkit-appearance:none; appearance:none;
+    background:#0a0d12; border:1px solid #30363d; color:#e6edf3; border-radius:8px;
+    padding:10px 12px; width:100%; }
+  ul { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px; }
+  ul li { background:#161b22; border:1px solid #30363d; border-radius:8px; padding:8px 12px; }
+  pre { background:#0a0d12; border:1px solid #30363d; border-radius:8px; padding:12px; overflow:auto; }
+  hr { border:none; border-top:1px solid #30363d; margin:6px 0; }
+  img,video,canvas { max-width:100%; border-radius:12px; }
+  .badge { display:inline-block; background:#1f6feb33; color:#79c0ff; border-radius:999px;
+    padding:2px 10px; font-size:12px; font-weight:600; }
+</style></head>
+<body><main>
+${body}
+</main></body></html>`
+end
+
+# ── self-closing void element: <img src="…" />, <br />, <hr /> ─────────
+function void
+    arg literal "<"
+    arg capture name ident
+    arg capture attrs attribute*
+    arg literal "/"
+    arg literal ">"
+    write `<${name}${attrs} />`
+end
+
+# ── generic matched-pair element: ONE function parses any <tag>…</tag> ─
+# The closer references the captured `name`, so </div> closes only <div>
+# and a mismatched tag is a parse error.
+function element
+    arg literal "<"
+    arg capture name ident
+    arg capture attrs attribute*
+    arg literal ">"
+    block_close_seq "</" name ">"
+    write `<${name}${attrs}>${body}</${name}>`
+end
+
+# ── attribute: key="value" (a named nonterminal, repeated via `*`) ─────
+# `raw` consumes exactly one token so the closing `>` of the tag is never
+# swallowed by the expression parser.
+function attribute
+    arg capture key ident
+    arg literal "="
+    arg capture val raw
+    write ` ${key}="${val}"`
+end
+
+# ── text node: a quoted "string" becomes escaped literal content ───────
+function text
+    bare
+    arg capture s raw
+    write `${escapeHtml s}`
+end
+
+# ── output: window.yaml (size + title come from <app …>) ───────────────
+file "window.yaml"
+    write `title: ${toJSON context.title}
+entry_path: ./static/index.html
+static_dirs:
+  "/static": ./static/
+size:
+  width: ${context.width}
+  height: ${context.height}
+`
+end
+
+# The wrapped HTML document is the primary output → static/index.html.
+output_file "static/index.html"

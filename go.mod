@@ -7,7 +7,7 @@ go 1.24.1 //.12
 require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/google/uuid v1.6.0
-	github.com/luowensheng/capy v0.20.0
+	github.com/olivierdevelops/capy v0.20.0
 	github.com/ncruces/zenity v0.10.14
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/tetratelabs/wazero v1.7.0
@@ -16,7 +16,7 @@ require (
 )
 
 // Use the local checkout for the latest Capy (ahead of the tagged release).
-replace github.com/luowensheng/capy => /Users/oliverlaleau/Documents/projects/capylang-claude
+replace github.com/olivierdevelops/capy => /Users/oliverlaleau/Documents/projects/capylang-claude
 
 require (
 	github.com/akavel/rsrc v0.10.2 // indirect

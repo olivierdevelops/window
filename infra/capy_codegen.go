@@ -1,6 +1,6 @@
 package infra
 
-import "github.com/luowensheng/capy"
+import "github.com/olivierdevelops/capy"
 
 // GenerateCapyApp compiles a Capy library and runs a .window source through it,
 // returning the generated app files (path -> contents): window.yaml, the

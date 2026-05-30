@@ -1,0 +1,23 @@
+<app title="Profile" width="480" height="600">
+  <div class="card">
+    <h1>"Ada Lovelace"</h1>
+    <p class="muted">"Mathematician · Note G enthusiast"</p>
+    <hr />
+    <h3>"Links"</h3>
+    <ul>
+      <li><a href="https://example.com/notes">"The Analytical Engine notes"</a></li>
+      <li><a href="https://example.com/bernoulli">"Bernoulli number algorithm"</a></li>
+      <li><a href="https://example.com/letters">"Correspondence with Babbage"</a></li>
+    </ul>
+    <hr />
+    <div class="row">
+      <span class="badge">"Algorithms"</span>
+      <span class="badge">"Computing"</span>
+      <span class="badge">"1843"</span>
+    </div>
+    <div class="row">
+      <a class="btn" href="https://example.com/follow">"Follow"</a>
+      <a href="https://example.com/contact">"Contact"</a>
+    </div>
+  </div>
+</app>

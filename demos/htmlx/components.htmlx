@@ -1,0 +1,51 @@
+# components.htmlx — define your own HTML tags.
+#
+# A <component> block defines a NEW tag you can then use like built-in HTML:
+#   • props="…"      — space-separated named attributes, read as {propName}
+#   • <slot></slot>   — where nested children go
+#   • void            — add it for a self-closing tag (<avatar name="…" />)
+#
+# Props are escaped automatically. No JavaScript, no library changes —
+# <component> expands to a real htmlx tag at transpile time.
+
+<component name="badge">
+  <span class="badge"><slot></slot></span>
+</component>
+
+<component name="card" props="title">
+  <section class="card">
+    <h3>{title}</h3>
+    <slot></slot>
+  </section>
+</component>
+
+<component name="stat" props="label value">
+  <div class="card" style="text-align:center">
+    <div class="badge">{label}</div>
+    <h1>{value}</h1>
+    <p class="muted"><slot></slot></p>
+  </div>
+</component>
+
+<component name="avatar" props="name" void>
+  <div class="row"><img src="https://ui-avatars.com/api/?name={name}" width="40" height="40" style="border-radius:50%" /><b>{name}</b></div>
+</component>
+
+<app title="Component kit" width="560" height="720">
+  <h1>"Dashboard"</h1>
+  <avatar name="Ada" />
+
+  <div class="grid">
+    <stat label="Users" value="1,204">"+8% this week"</stat>
+    <stat label="Revenue" value="$32k">"on track"</stat>
+    <stat label="Uptime" value="99.9%">"30 days"</stat>
+  </div>
+
+  <card title="What you're looking at">
+    <p class="muted">"Every "<badge>"custom tag"</badge>" here — "<code>"<card>"</code>
+       ", "<code>"<stat>"</code>", "<code>"<avatar/>"</code>
+       " — was defined with "<code>"<component>"</code>" at the top of this file."</p>
+    <p class="muted">"Props like "<code>"{title}"</code>" are escaped; "<code>"<slot>"</code>
+       " is where children go."</p>
+  </card>
+</app>

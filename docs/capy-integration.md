@@ -8,7 +8,7 @@ wired together by hand-maintained string keys — a `BACKEND.call("greet", …)`
 in JS must match an `@app.handle("greet")` in Python, which must match a
 `run_backend_script:` line in YAML. Nothing checks that they agree.
 
-[**Capy**](https://github.com/luowensheng/capy) is a transpiler engine
+[**Capy**](https://github.com/olivierdevelops/capy) is a transpiler engine
 with **zero default grammar**. You define a tiny source language in a
 `.capy` library, and Capy gives you a code generator that emits *any*
 textual target — HTML, JS, Python, Go, YAML, all at once. This document
@@ -440,7 +440,7 @@ and respects VHCO. The Capy Go API is pure Go:
 // infra/capy_codegen.go  (infra may import third-party, no domain logic)
 package infra
 
-import "github.com/luowensheng/capy" // pure Go, no CGo
+import "github.com/olivierdevelops/capy" // pure Go, no CGo
 
 // GenerateApp turns one .capy source into a set of output files
 // (path → contents), ready to write next to a window.yaml.

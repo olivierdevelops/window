@@ -9,7 +9,7 @@
 >
 > Read [using-capy.md](using-capy.md) first (install + the model). The
 > authoritative grammar/API is the
-> [Capy integration guide](https://github.com/luowensheng/capy).
+> [Capy integration guide](https://github.com/olivierdevelops/capy).
 
 ---
 
@@ -1060,6 +1060,6 @@ end
 
 > The inner-DSL helpers (`html`, `unquote`, `asString`, `toQuoted`, `toJSON`)
 > and any cross-reference validation are the library author's design choice —
-> see the [Capy integration guide](https://github.com/luowensheng/capy). The
+> see the [Capy integration guide](https://github.com/olivierdevelops/capy). The
 > structural point stands: **one source → UI + events + state + config, with
 > any backend logic as in-process Go in the single `window` binary.**

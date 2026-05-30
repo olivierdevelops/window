@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="CapyScript (.cs) — a tiny JavaScript-like scripting language that compiles to real JS and runs in a native window. Defined entirely as a Capy library; one binary runs it." />
+<title>CapyScript — .cs scripts compiled to JS for window</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#7c7cff;--accent2:#58a6ff;--green:#3fb950;--red:#ff5f57;--yellow:#febc2e}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;font-size:15px}
+  a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:"SF Mono","Fira Code",ui-monospace,monospace}
+  svg{display:block;max-width:100%;height:auto}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  header.top{position:sticky;top:0;z-index:60;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  header.top .wrap{display:flex;align-items:center;gap:20px;height:58px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.3px}
+  .brand .mark{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+  header.top nav{margin-left:auto;display:flex;gap:22px;font-size:14px}
+  header.top nav a{color:var(--muted)}header.top nav a:hover{color:var(--text);text-decoration:none}
+  @media(max-width:680px){header.top nav{display:none}}
+
+  .hero{padding:56px 0 40px;border-bottom:1px solid var(--border);background:radial-gradient(900px 360px at 75% -10%,rgba(124,124,255,.16),transparent)}
+  .badge{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(124,124,255,.35);background:rgba(124,124,255,.12);color:var(--accent);border-radius:999px;padding:4px 12px;font-size:12px;margin-bottom:16px}
+  h1{font-size:2.6rem;line-height:1.08;letter-spacing:-1.4px;font-weight:800;margin-bottom:12px}
+  h1 code{font-size:2.6rem;color:var(--accent)}
+  .hero p.lead{color:var(--muted);font-size:1.06rem;max-width:680px;margin-bottom:20px}
+  .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:9px;font-weight:600;font-size:14px;border:1px solid transparent}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:var(--bg2);border-color:var(--border);color:var(--text)}
+  .btn:hover{transform:translateY(-1px);text-decoration:none}
+
+  section{padding:48px 0;border-bottom:1px solid var(--border)}
+  .eyebrow{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+  h2{font-size:1.6rem;letter-spacing:-.5px;margin-bottom:10px}
+  h3{font-size:1.1rem;margin:24px 0 8px}
+  p{color:var(--muted);margin-bottom:12px}
+  p strong,li strong{color:var(--text)}
+  ul{color:var(--muted);margin:0 0 12px 20px}li{margin-bottom:5px}
+  .lead-p{font-size:1.04rem;color:var(--muted);margin-bottom:16px;max-width:760px}
+
+  .code{position:relative;background:#0a0d12;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:12px 0}
+  .code .cap{padding:7px 14px;border-bottom:1px solid var(--border);font:12px ui-monospace,monospace;color:var(--muted);display:flex;gap:8px;align-items:center}
+  .code .cap .d{width:9px;height:9px;border-radius:50%}
+  .code pre{padding:14px 16px;overflow-x:auto}
+  .code code{font:12.5px/1.7 ui-monospace,monospace;color:#c9d1d9;white-space:pre}
+  .out{background:rgba(63,185,80,.05);border:1px solid rgba(63,185,80,.25);border-left:3px solid var(--green);border-radius:8px;padding:11px 14px;margin:12px 0}
+  .out .lbl{font:11px/1 ui-monospace,monospace;letter-spacing:.6px;color:var(--green);font-weight:700;display:block;margin-bottom:7px}
+  .out code{font:12.5px/1.6 ui-monospace,monospace;color:#aeb6c0;white-space:pre}
+  .err{background:rgba(255,95,87,.05);border:1px solid rgba(255,95,87,.25);border-left:3px solid var(--red)}
+  .err .lbl{color:var(--red)}
+
+  .sheet{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0}
+  .sheet th{text-align:left;padding:9px 12px;border-bottom:2px solid var(--border);color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+  .sheet td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  .sheet tr:hover td{background:var(--bg2)}
+  .sheet td:first-child{color:var(--text);white-space:nowrap}
+  .sheet code{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:12px;color:var(--accent2)}
+  .scroll{overflow-x:auto}
+
+  .diagram{margin:20px 0;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px}
+  .demos{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+  @media(max-width:760px){.demos{grid-template-columns:1fr}}
+  .demo{background:var(--bg2);border:1px solid var(--border);border-radius:13px;overflow:hidden}
+  .demo .dh{padding:14px 16px 4px}
+  .demo .dh b{font-size:1rem}.demo .dh p{font-size:12.5px;margin:4px 0 8px}
+  .tag{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:999px;background:rgba(124,124,255,.1);border:1px solid rgba(124,124,255,.3);color:var(--accent);margin:0 4px 6px 0}
+  .demo .code{margin:0;border:none;border-top:1px solid var(--border);border-radius:0}
+  .demo .code .cap{font-size:11px}
+  .run{display:inline-block;font:11.5px ui-monospace,monospace;color:var(--green);background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:4px 9px;margin:10px 16px 14px}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0}
+  @media(max-width:760px){.cols{grid-template-columns:1fr}}
+  footer{padding:30px 0;color:var(--muted);font-size:13px}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><span class="mark">W</span> window <span style="color:var(--muted);font-weight:500;font-size:13px">· CapyScript</span></div>
+    <nav>
+      <a href="#how">How</a>
+      <a href="#tour">Tour</a>
+      <a href="#reference">Reference</a>
+      <a href="#demos">Demos</a>
+      <a href="htmlx.html">.htmlx →</a>
+      <a href="window-lang.html">.window →</a>
+      <a href="index.html">← Home</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="wrap">
+    <span class="badge">● let / fn / if / for / while · compiles to real JS</span>
+    <h1>Scripts in <code>.cs</code>, compiled to JS</h1>
+    <p class="lead">A <code>.cs</code> file is a tiny <strong>JavaScript-like</strong> program —
+      <code>let</code>, <code>fn</code>, <code>if/else</code>, <code>for…in</code>,
+      <code>while</code>, <code>log</code>. <code>window app.cs</code> compiles it to real
+      JavaScript, drops it in a console-style window, and runs it. The whole language is
+      defined as one <a href="https://github.com/olivierdevelops/capy">Capy</a> library —
+      no parser hand-written, no toolchain.</p>
+    <div class="cta">
+      <a class="btn primary" href="#tour">See it →</a>
+      <a class="btn ghost" href="#demos">Browse demos</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- HOW -->
+  <section id="how">
+    <div class="eyebrow">how it works</div>
+    <h2>Every keyword is one Capy function</h2>
+    <p class="lead-p">Each statement form — <code>fn</code>, <code>if</code>, <code>for</code> — is a
+      Capy block function. Blocks close with <code>end</code>; <code>${body}</code> is re-indented and
+      spliced into a JS template. <code>if</code> uses a multi-section block so the optional
+      <code>else</code> branch only emits when it has content.</p>
+    <div class="diagram">
+      <svg viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A .cs source is compiled by Capy into JavaScript plus window.yaml and a console-style index.html, then run by the window binary">
+        <defs><marker id="ah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#7c7cff"/></marker></defs>
+        <rect x="14" y="64" width="150" height="74" rx="11" fill="#161b22" stroke="#7c7cff"/>
+        <text x="89" y="98" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#c8c8ff">app.cs</text>
+        <text x="89" y="118" text-anchor="middle" font-family="system-ui" font-size="11" fill="#8b949e">fn · if · for · log</text>
+        <line x1="170" y1="101" x2="226" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="232" y="70" width="120" height="62" rx="11" fill="#1c2128" stroke="#30363d"/>
+        <text x="292" y="96" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">Capy</text>
+        <text x="292" y="114" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6e7681">templates</text>
+        <line x1="358" y1="101" x2="414" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="420" y="52" width="180" height="34" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="510" y="74" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#febc2e">static/app.js</text>
+        <rect x="420" y="92" width="180" height="34" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="510" y="114" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#c9d1d9">static/index.html</text>
+        <rect x="420" y="132" width="180" height="34" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="510" y="154" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#3fb950">window.yaml</text>
+        <line x1="606" y1="101" x2="662" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="668" y="64" width="138" height="74" rx="11" fill="#1c2128" stroke="#7c7cff"/>
+        <text x="737" y="96" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">window</text>
+        <text x="737" y="116" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6e7681">native webview</text>
+      </svg>
+    </div>
+    <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>assets/capyscript.capy (the if/else rule)</div>
+<pre><code>function iff
+    arg literal "if"
+    arg capture cond tail
+    block_sections else closer end     # `else` is an optional interior section
+    write `if (${cond}) {
+${indent 2 body}`
+    if else                            # only emit `} else { … }` when non-empty
+        write `} else {
+${indent 2 else}}
+`
+    else
+        write `}
+`
+    end
+end</code></pre></div>
+  </section>
+
+  <!-- TOUR -->
+  <section id="tour">
+    <div class="eyebrow">60-second tour</div>
+    <h2>Recursion, loops, output</h2>
+    <p class="lead-p">Keyword-led statements, blocks closed by <code>end</code>. <code>log</code>
+      becomes <code>console.log</code> and is mirrored onto the window so output is visible with
+      zero wiring.</p>
+    <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>fib.cs</div>
+<pre><code>const N = 15
+
+fn fib(n)
+    if n &lt; 2
+        return n
+    else
+        return fib(n - 1) + fib(n - 2)
+    end
+end
+
+let i = 0
+while i &lt; N
+    log "fib(" + i + ") = " + fib(i)
+    do i = i + 1
+end</code></pre></div>
+    <p>Compiles to plain, readable JavaScript (real output):</p>
+    <div class="out"><span class="lbl">GENERATED static/app.js</span>
+<code>const N = 15;
+function fib(n) {
+  if (n &lt; 2) {
+    return n;
+  } else {
+    return fib(n - 1) + fib(n - 2);
+  }
+}
+let i = 0;
+while (i &lt; N) {
+  console.log("fib(" + i + ") = " + fib(i));
+  i = i + 1;
+}</code></div>
+    <span class="run">window demos/cs/fib.cs</span>
+  </section>
+
+  <!-- REFERENCE -->
+  <section id="reference">
+    <div class="eyebrow">language reference</div>
+    <h2>Everything you can write</h2>
+    <div class="scroll"><table class="sheet">
+      <thead><tr><th>CapyScript</th><th>Compiles to</th></tr></thead>
+      <tbody>
+        <tr><td><code>let x = 1</code> / <code>const y = 2</code></td><td><code>let x = 1;</code> / <code>const y = 2;</code></td></tr>
+        <tr><td><code>fn name(args) … end</code></td><td><code>function name(args) { … }</code></td></tr>
+        <tr><td><code>if cond … else … end</code></td><td><code>if (cond) { … } else { … }</code></td></tr>
+        <tr><td><code>for v in iter … end</code></td><td><code>for (const v of iter) { … }</code></td></tr>
+        <tr><td><code>while cond … end</code></td><td><code>while (cond) { … }</code></td></tr>
+        <tr><td><code>return expr</code></td><td><code>return expr;</code></td></tr>
+        <tr><td><code>log expr</code></td><td><code>console.log(expr)</code> — mirrored on-page</td></tr>
+        <tr><td><code>do EXPR</code></td><td><code>EXPR;</code> — raw JS escape hatch</td></tr>
+      </tbody>
+    </table></div>
+    <h3>The one rule to remember: <code>do</code></h3>
+    <p>There is no catch-all line rule, so the grammar never guesses. Anything that isn't a keyword
+      statement — an assignment, a method call, an arrow function — goes through <code>do</code>.
+      That keeps every line unambiguous while letting full JavaScript through when you need it.</p>
+    <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>closures.cs — `do` passes raw JS through</div>
+<pre><code>fn makeCounter(start)
+    do let n = start
+    do return () =&gt; { n = n + 1; return n; }
+end
+
+const next = makeCounter(10)
+log "first:  " + next()
+log "second: " + next()</code></pre></div>
+  </section>
+
+  <!-- DEMOS -->
+  <section id="demos">
+    <div class="eyebrow">see it run</div>
+    <h2>Demos</h2>
+    <div class="demos">
+      <div class="demo">
+        <div class="dh"><b>hello</b><p>The smallest program; <code>log</code> + <code>const</code>.</p>
+          <span class="tag">log</span><span class="tag">const</span></div>
+        <div class="code"><div class="cap">hello.cs</div>
+<pre><code>log "Hello from CapyScript!"
+const name = "capy"
+log "powered by " + name</code></pre></div>
+        <span class="run">window demos/cs/hello.cs</span>
+      </div>
+      <div class="demo">
+        <div class="dh"><b>fizzbuzz</b><p>Nested <code>if/else</code>, <code>for … in</code> a range.</p>
+          <span class="tag">if/else</span><span class="tag">for</span></div>
+        <div class="code"><div class="cap">fizzbuzz.cs</div>
+<pre><code>for i in Array.from({length: 20}, (_, k) =&gt; k + 1)
+    log fizzbuzz(i)
+end</code></pre></div>
+        <span class="run">window demos/cs/fizzbuzz.cs</span>
+      </div>
+      <div class="demo">
+        <div class="dh"><b>primes</b><p><code>while</code>, early <code>return</code>, <code>do</code> for mutation.</p>
+          <span class="tag">while</span><span class="tag">return</span></div>
+        <div class="code"><div class="cap">primes.cs</div>
+<pre><code>fn isPrime(n)
+    let d = 2
+    while d * d &lt;= n
+        if n % d == 0
+            return false
+        end
+        do d = d + 1
+    end
+    return true
+end</code></pre></div>
+        <span class="run">window demos/cs/primes.cs</span>
+      </div>
+      <div class="demo">
+        <div class="dh"><b>closures</b><p>Higher-order fns via <code>do</code> passing arrows through.</p>
+          <span class="tag">do</span><span class="tag">arrow fns</span></div>
+        <div class="code"><div class="cap">closures.cs</div>
+<pre><code>const doubled = [1, 2, 3, 4].map(x =&gt; x * 2)
+log "doubled: " + doubled.join(", ")</code></pre></div>
+        <span class="run">window demos/cs/closures.cs</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHICH ONE -->
+  <section id="vs">
+    <div class="eyebrow">which one</div>
+    <h2>Three languages, one engine</h2>
+    <div class="scroll"><table class="sheet">
+      <thead><tr><th></th><th>.cs</th><th>.htmlx</th><th>.window</th></tr></thead>
+      <tbody>
+        <tr><td>You write</td><td>JS-like script logic</td><td>HTML markup, by hand</td><td>Widgets + state</td></tr>
+        <tr><td>Compiles to</td><td>JavaScript</td><td>HTML document</td><td>HTML + JS app</td></tr>
+        <tr><td>Best for</td><td>Algorithms, scratch logic, demos</td><td>Static pages, layout control</td><td>Interactive apps</td></tr>
+      </tbody>
+    </table></div>
+    <p>All three are transpiled by Capy and produce a plain <code>window</code> app.</p>
+  </section>
+
+  <!-- LEARN MORE -->
+  <section id="learn">
+    <div class="eyebrow">go deeper</div>
+    <h2>Learn more</h2>
+    <ul>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/assets/capyscript.capy">assets/capyscript.capy</a> — the whole language, defined as a Capy library</li>
+      <li><a href="https://github.com/olivierdevelops/window/tree/main/demos/cs">demos/cs/</a> — every <code>.cs</code> demo above</li>
+      <li><a href="htmlx.html">The <code>.htmlx</code> format</a> — apps as matched-pair HTML</li>
+      <li><a href="window-lang.html">The <code>.window</code> language</a> — interactive, stateful apps</li>
+      <li><a href="https://github.com/olivierdevelops/capy">Capy</a> — the transpiler engine</li>
+    </ul>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>window · CapyScript · MIT</span>
+    <span><a href="index.html">← Home</a> · <a href="https://github.com/olivierdevelops/window">GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

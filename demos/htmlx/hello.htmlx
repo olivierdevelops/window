@@ -1,0 +1,5 @@
+<app title="Hello" width="460" height="320">
+  <h1>"Hello, window"</h1>
+  <p class="muted">"A whole desktop app, written as matched-pair angle-bracket HTML."</p>
+  <a class="btn" href="https://github.com/olivierdevelops/window">"Docs"</a>
+</app>

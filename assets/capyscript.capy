@@ -1,0 +1,193 @@
+# capyscript.capy — a tiny JS-like scripting language that compiles to a
+# runnable window app.
+#
+# A .cs source uses indentation-free, keyword-led statements:
+#
+#     const N = 10
+#     fn fib(n)
+#         if n < 2
+#             return n
+#         else
+#             return fib(n - 1) + fib(n - 2)
+#         end
+#     end
+#     for i in range(N)
+#         log "fib(" + i + ") = " + fib(i)
+#     end
+#
+# The transpiler emits real JavaScript (primary output → static/app.js),
+# plus a console-style static/index.html and a window.yaml. `log` becomes
+# console.log and is mirrored into an on-page console so the window shows
+# output with no extra wiring. `do EXPR` passes any raw expression through
+# (no keyword fits everything; `do` is the escape hatch).
+extension cs
+
+comments
+    line "#"
+end
+
+context
+    title  "CapyScript"
+    width  640
+    height 560
+end
+
+# ── let / const — variable bindings ───────────────────────────────────
+function let
+    arg literal "let"
+    arg capture name ident
+    arg literal "="
+    arg capture expr tail
+    write `let ${name} = ${expr};
+`
+end
+
+function const
+    arg literal "const"
+    arg capture name ident
+    arg literal "="
+    arg capture expr tail
+    write `const ${name} = ${expr};
+`
+end
+
+# ── fn name(params) … end — function declaration ──────────────────────
+# `sig` captures the parenthesized parameter list, e.g. `(n)` or `(a, b)`.
+function fn
+    arg literal "fn"
+    arg capture name ident
+    arg capture sig tail
+    block_closer end
+    write `function ${name}${sig} {
+${indent 2 body}}
+`
+end
+
+# ── if cond … [else …] end — multi-section block ──────────────────────
+# `block_sections else` makes `else` an interior section; the `${else}`
+# capture is empty when the branch is omitted, so the `} else { … }` is
+# only emitted when an else body exists.
+function iff
+    arg literal "if"
+    arg capture cond tail
+    block_sections else closer end
+    write `if (${cond}) {
+${indent 2 body}`
+    if else
+        write `} else {
+${indent 2 else}}
+`
+    else
+        write `}
+`
+    end
+end
+
+# ── for v in iter … end — for-of loop ─────────────────────────────────
+function forof
+    arg literal "for"
+    arg capture v ident
+    arg literal "in"
+    arg capture iter tail
+    block_closer end
+    write `for (const ${v} of ${iter}) {
+${indent 2 body}}
+`
+end
+
+# ── while cond … end ──────────────────────────────────────────────────
+function whilef
+    arg literal "while"
+    arg capture cond tail
+    block_closer end
+    write `while (${cond}) {
+${indent 2 body}}
+`
+end
+
+# ── return expr ───────────────────────────────────────────────────────
+function ret
+    arg literal "return"
+    arg capture expr tail
+    write `return ${expr};
+`
+end
+
+# ── log expr → console.log(expr) ──────────────────────────────────────
+function log
+    arg literal "log"
+    arg capture expr tail
+    write `console.log(${expr});
+`
+end
+
+# ── do EXPR — raw statement escape hatch (assignment, calls, …) ────────
+function do
+    arg literal "do"
+    arg capture e tail
+    write `${e};
+`
+end
+
+# `end` is a valid bare token (closes fn / if / for / while blocks).
+function end
+end
+
+# ── window config ─────────────────────────────────────────────────────
+file "window.yaml"
+    write `title: ${toJSON context.title}
+entry_path: ./static/index.html
+static_dirs:
+  "/static": ./static/
+size:
+  width: ${context.width}
+  height: ${context.height}
+`
+end
+
+# ── console UI: runs static/app.js, mirrors console.log onto the page ──
+file "static/index.html"
+    write `<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark light" />
+<title>${escapeHtml context.title}</title>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; padding:20px; background:#0d1117; color:#e6edf3;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; line-height:1.5; }
+  header { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  h1 { font-size:1.1rem; margin:0; font-weight:600; }
+  .badge { background:#1f6feb33; color:#79c0ff; border-radius:999px;
+    padding:2px 10px; font-size:12px; font-weight:600; }
+  #out { background:#0a0d12; border:1px solid #30363d; border-radius:10px;
+    padding:14px; white-space:pre-wrap; word-break:break-word; min-height:60vh;
+    margin:0; overflow:auto; }
+  #out .err { color:#ff7b72; }
+</style></head>
+<body>
+<header><h1>${escapeHtml context.title}</h1><span class="badge">.cs → js</span></header>
+<pre id="out"></pre>
+<script>
+  (function(){
+    var out = document.getElementById('out');
+    function line(args, cls){
+      var s = Array.prototype.map.call(args, function(a){
+        return (typeof a === 'object') ? JSON.stringify(a) : String(a);
+      }).join(' ');
+      var d = document.createElement('div');
+      if (cls) d.className = cls;
+      d.textContent = s;
+      out.appendChild(d);
+    }
+    var log = console.log.bind(console);
+    console.log = function(){ log.apply(console, arguments); line(arguments); };
+    window.addEventListener('error', function(e){ line([e.message], 'err'); });
+  })();
+</script>
+<script src="/static/app.js"></script>
+</body></html>`
+end
+
+# Transpiled JavaScript is the primary output.
+output_file "static/app.js"

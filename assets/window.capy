@@ -280,13 +280,19 @@ end
 file "static/index.html"
     write `<!doctype html>
 <html lang="en"><head><meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark light" />
 <title>${escapeHtml context.title}</title>
 <style>
+  /* cross-platform normalization (WebKit / WebView2 / WebKitGTK) */
   :root { --accent: ${context.theme}; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
-    background:#0d1117; color:#e6edf3; padding:28px; line-height:1.6; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:#0d1117; color:#e6edf3; padding:28px; line-height:1.6;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  button,input,textarea,select { font-family:inherit; -webkit-appearance:none; appearance:none; }
+  span[data-bind],pre,p { overflow-wrap:anywhere; word-break:break-word; }
   #app { max-width:680px; margin:0 auto; display:flex; flex-direction:column; gap:12px; }
   h1 { font-size:1.7rem; margin:0; }
   h2 { font-size:1.15rem; color:#8b949e; font-weight:600; margin:0; }
@@ -430,6 +436,15 @@ function render(){
 }
 function setState(patch){ Object.assign(state, patch); render(); }
 
+// Cross-platform guards: features vary across system webviews (WebKit /
+// WebView2 / WebKitGTK) and may be denied. Degrade gracefully, never throw.
+function hasNative(f){ return typeof NATIVE !== 'undefined' && NATIVE && NATIVE[f]; }
+function CALL(name, args, cb){
+  if (typeof BACKEND !== 'undefined' && BACKEND && BACKEND.call) {
+    try { BACKEND.call(name, args, cb); } catch (e) { console.warn('backend call failed:', name, e); }
+  } else { console.warn('backend unavailable:', name); }
+}
+
 const ACTIONS = {
 `
     for a in context.actions
@@ -437,7 +452,7 @@ const ACTIONS = {
 `
     end
     for c in context.calls
-        write `  ${c.name}: () => BACKEND.call(${toJSON c.handler}, ${c.args}, ({ data }) => setState({ ${c.into}: data })),
+        write `  ${c.name}: () => CALL(${toJSON c.handler}, ${c.args}, ({ data }) => { if (data) setState({ ${c.into}: data }); }),
 `
     end
     write `};
@@ -455,53 +470,54 @@ const ACTIONS = {
         write `setInterval(() => ACTIONS.${tm.action} && ACTIONS.${tm.action}(), ${tm.ms});
 `
     end
-    # native widget wiring
+    # native widget wiring — every block guards the feature + try/catch so the
+    # app degrades gracefully when a webview lacks it or the user denies access.
     for n in context.ui
         if n.kind == "photobooth"
-            write `NATIVE.camera.stream({ into: '#pb-cam' });
-document.getElementById('pb-shoot').onclick = async () => { document.getElementById('pb-shot').src = await NATIVE.camera.snapshot(); };
+            write `if (hasNative('camera')) {
+  (async () => { try { await NATIVE.camera.stream({ into: '#pb-cam' }); } catch (e) { console.warn(e); } })();
+  document.getElementById('pb-shoot').onclick = async () => { try { document.getElementById('pb-shot').src = await NATIVE.camera.snapshot(); } catch (e) { console.warn(e); } };
+}
 `
         end
         if n.kind == "recorder"
-            write `(() => { let h = null; const b = document.getElementById('rec-btn'); b.onclick = async () => { if (!h) { h = await NATIVE.mic.record(); b.textContent = 'Stop'; } else { document.getElementById('rec-play').src = await h.stop(); h = null; b.textContent = 'Record'; } }; })();
+            write `if (hasNative('mic')) { (() => { let h = null; const b = document.getElementById('rec-btn'); b.onclick = async () => { try { if (!h) { h = await NATIVE.mic.record(); b.textContent = 'Stop'; } else { document.getElementById('rec-play').src = await h.stop(); h = null; b.textContent = 'Record'; } } catch (e) { console.warn(e); } }; })(); }
 `
         end
         if n.kind == "dictate"
-            write `document.getElementById('dc-${n.bind}').onclick = () => NATIVE.speech.listen(r => { if (r.isFinal) setState({ ${n.bind}: (state.${n.bind} || '') + r.text + ' ' }); });
+            write `if (hasNative('speech')) { document.getElementById('dc-${n.bind}').onclick = () => { try { NATIVE.speech.listen(r => { if (r.isFinal) setState({ ${n.bind}: (state.${n.bind} || '') + r.text + ' ' }); }); } catch (e) { console.warn('speech recognition unavailable', e); } }; }
 `
         end
         if n.kind == "speak"
-            write `document.getElementById('sp-${n.bind}').onclick = () => NATIVE.speech.say(String(state.${n.bind} || ''));
+            write `if (hasNative('speech')) { document.getElementById('sp-${n.bind}').onclick = () => { try { NATIVE.speech.say(String(state.${n.bind} || '')); } catch (e) { console.warn(e); } }; }
 `
         end
         if n.kind == "screencast"
-            write `(() => { let h = null; const b = document.getElementById('scr-btn'); b.onclick = async () => { if (!h) { h = await NATIVE.screen.record({ audio: true }); b.textContent = 'Stop'; } else { document.getElementById('scr-dl').href = await h.stop(); h = null; b.textContent = 'Record screen'; } }; })();
+            write `if (hasNative('screen')) { (() => { let h = null; const b = document.getElementById('scr-btn'); b.onclick = async () => { try { if (!h) { h = await NATIVE.screen.record({ audio: true }); b.textContent = 'Stop'; } else { document.getElementById('scr-dl').href = await h.stop(); h = null; b.textContent = 'Record screen'; } } catch (e) { console.warn(e); } }; })(); }
 `
         end
         if n.kind == "sketch"
-            write `(() => { let dn = false; const c = document.getElementById('${n.id}'); c.onmousedown = () => dn = true; c.onmouseup = () => dn = false; c.onmousemove = e => { if (dn) NATIVE.canvas.drawRect({ canvas_id: '${n.id}', x: e.offsetX, y: e.offsetY, w: 3, h: 3, color: '${context.theme}', fill: true }); }; })();
+            write `if (hasNative('canvas')) { (() => { let dn = false; const c = document.getElementById('${n.id}'); if (!c) return; c.onmousedown = () => dn = true; c.onmouseup = () => dn = false; c.onmousemove = e => { if (dn) { try { NATIVE.canvas.drawRect({ canvas_id: '${n.id}', x: e.offsetX, y: e.offsetY, w: 3, h: 3, color: '${context.theme}', fill: true }); } catch (_) {} } }; })(); }
 `
         end
         if n.kind == "runner"
-            write `document.getElementById('run-go').onclick = async () => { const parts = document.getElementById('run-cmd').value.split(' '); const r = await NATIVE.os.exec(parts[0], parts.slice(1)); document.getElementById('run-out').textContent = r.stdout + r.stderr; };
+            write `if (hasNative('os')) { document.getElementById('run-go').onclick = async () => { try { const parts = document.getElementById('run-cmd').value.split(' '); const r = await NATIVE.os.exec(parts[0], parts.slice(1)); document.getElementById('run-out').textContent = r.stdout + r.stderr; } catch (e) { document.getElementById('run-out').textContent = String(e); } }; }
 `
         end
         if n.kind == "notepad"
-            write `(async () => { try { document.getElementById('np-area').value = await NATIVE.fs.readFile(${toJSON n.path}); } catch (e) {} })();
-document.getElementById('np-save').onclick = () => NATIVE.fs.writeFile(${toJSON n.path}, document.getElementById('np-area').value);
+            write `if (hasNative('fs')) { (async () => { try { document.getElementById('np-area').value = await NATIVE.fs.readFile(${toJSON n.path}); } catch (e) {} })(); document.getElementById('np-save').onclick = () => { try { NATIVE.fs.writeFile(${toJSON n.path}, document.getElementById('np-area').value); } catch (e) { console.warn(e); } }; }
 `
         end
         if n.kind == "filepicker"
-            write `document.getElementById('fp-${n.bind}').onclick = async () => { const sel = await NATIVE.dialogs.openFile({ title: 'Choose a file' }); setState({ ${n.bind}: (sel && sel[0]) || '(cancelled)' }); };
+            write `if (hasNative('dialogs')) { document.getElementById('fp-${n.bind}').onclick = async () => { try { const sel = await NATIVE.dialogs.openFile({ title: 'Choose a file' }); setState({ ${n.bind}: (sel && sel[0]) || '(cancelled)' }); } catch (e) { console.warn(e); } }; }
 `
         end
         if n.kind == "palette"
-            write `NATIVE.input.hotkey(${toJSON n.combo}, () => { const p = document.getElementById('pal'); p.hidden = !p.hidden; });
-NATIVE.input.onKey(e => { if (e.key === 'Escape') document.getElementById('pal').hidden = true; });
+            write `if (hasNative('input')) { try { NATIVE.input.hotkey(${toJSON n.combo}, () => { const p = document.getElementById('pal'); p.hidden = !p.hidden; }); NATIVE.input.onKey(e => { if (e.key === 'Escape') document.getElementById('pal').hidden = true; }); } catch (e) { console.warn(e); } }
 `
         end
         if n.kind == "chart"
-            write `new Chart(document.getElementById('${n.id}'), { type: 'line', data: { labels: (state.${n.id} || [1,2,3,4,5]).map((_, i) => i + 1), datasets: [{ label: '${n.id}', data: state.${n.id} || [3,7,5,9,4], borderColor: '${context.theme}', tension: .3 }] } });
+            write `if (typeof Chart !== 'undefined') { try { new Chart(document.getElementById('${n.id}'), { type: 'line', data: { labels: (state.${n.id} || [1,2,3,4,5]).map((_, i) => i + 1), datasets: [{ label: '${n.id}', data: state.${n.id} || [3,7,5,9,4], borderColor: '${context.theme}', tension: .3 }] } }); } catch (e) { console.warn(e); } } else { console.warn('Chart.js not loaded'); }
 `
         end
     end

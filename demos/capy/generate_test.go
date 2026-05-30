@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luowensheng/capy"
+	"github.com/olivierdevelops/capy"
 )
 
 func TestCapyDemosGenerate(t *testing.T) {

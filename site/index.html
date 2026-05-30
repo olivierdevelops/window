@@ -170,9 +170,11 @@
       <a href="#build">Build</a>
       <a href="#demos">Demos</a>
       <a href="window-lang.html">.window lang</a>
+      <a href="htmlx.html">.htmlx</a>
+      <a href="capyscript.html">.cs</a>
       <a href="#capabilities">Capabilities</a>
       <a href="#devs">Developers</a>
-      <a href="https://github.com/luowensheng/window">GitHub</a>
+      <a href="https://github.com/olivierdevelops/window">GitHub</a>
     </nav>
   </div>
 </header>
@@ -521,7 +523,7 @@ then opens it in a native window. Your app is untouched.</code></pre></div>
       </div>
 
       <p style="margin-top:6px">All demos live in the repo under <code>demos/</code> —
-        <a href="https://github.com/luowensheng/window/blob/main/docs/demos.md">browse them →</a></p>
+        <a href="https://github.com/olivierdevelops/window/blob/main/docs/demos.md">browse them →</a></p>
     </section>
 
     <!-- CAPY -->
@@ -531,7 +533,7 @@ then opens it in a native window. Your app is untouched.</code></pre></div>
       <p class="lead-p">window has its own declarative app language — a <code>.window</code> file.
         Run it with <code>window app.window</code>: it transpiles to the UI <em>and</em> the
         <code>window.yaml</code>, then opens. (The transpiler under the hood is the
-        <a href="https://github.com/luowensheng/capy">Capy</a> engine — you never see it.) Backend
+        <a href="https://github.com/olivierdevelops/capy">Capy</a> engine — you never see it.) Backend
         calls are served <strong>in-process</strong> by Go handlers built into the binary — no
         Python, no Node, no socket, no sidecar.</p>
 
@@ -589,10 +591,17 @@ send calc math into result args { a: state.a, b: state.b, op: 'add' }</code></pr
       </div>
       <p style="margin-top:14px">
         <a class="btn primary" href="window-lang.html">Full .window reference &amp; all 34 demos →</a>
+        <a class="btn ghost" href="htmlx.html" style="margin-left:8px">Prefer raw HTML? Write <code>.htmlx</code> →</a>
+        <a class="btn ghost" href="capyscript.html" style="margin-left:8px">Just need logic? Script in <code>.cs</code> →</a>
       </p>
+      <p class="hint" style="margin-top:8px">Or skip the widgets and author a page as matched-pair
+        angle-bracket HTML — <code>&lt;tag&gt;…&lt;/tag&gt;</code>, nesting validated at transpile time.
+        See the <a href="htmlx.html">.htmlx format</a>. Need plain algorithmic logic instead?
+        <a href="capyscript.html">CapyScript (<code>.cs</code>)</a> compiles a tiny JS-like language to
+        real JavaScript.</p>
       <p style="margin-top:10px">Docs:
-        <a href="https://github.com/luowensheng/window/blob/main/docs/using-capy.md">using-capy.md</a> ·
-        <a href="https://github.com/luowensheng/window/blob/main/docs/capy-full-apps.md">capy-full-apps.md</a></p>
+        <a href="https://github.com/olivierdevelops/window/blob/main/docs/using-capy.md">using-capy.md</a> ·
+        <a href="https://github.com/olivierdevelops/window/blob/main/docs/capy-full-apps.md">capy-full-apps.md</a></p>
     </section>
 
     <!-- QUICK START -->
@@ -732,8 +741,8 @@ send calc math into result args { a: state.a, b: state.b, op: 'add' }</code></pr
       <div class="out"><span class="lbl">await NATIVE.fs.readDir("/") →</span><pre><code>[ { name: "main.go", is_dir: false, size: 1843 },
   { name: "static",  is_dir: true,  size: 96   } ]</code></pre></div>
       <p style="margin-top:10px">Reference:
-        <a href="https://github.com/luowensheng/window/blob/main/docs/native-features.md">native-features.md</a> ·
-        <a href="https://github.com/luowensheng/window/blob/main/docs/device-capabilities.md">device-capabilities.md</a></p>
+        <a href="https://github.com/olivierdevelops/window/blob/main/docs/native-features.md">native-features.md</a> ·
+        <a href="https://github.com/olivierdevelops/window/blob/main/docs/device-capabilities.md">device-capabilities.md</a></p>
     </section>
 
     <!-- BACKENDS -->
@@ -804,7 +813,7 @@ for line in BufReader::new(sock.try_clone()?).lines() {
       <p>Compile your backend to WebAssembly and point <code>wasm_backend</code> at it. window loads
         it with <a href="https://wazero.io">wazero</a> (pure Go, no CGo) — the frontend is identical
         to the socket version. See the <a href="#demo-wasm">WASM demo above</a> and
-        <a href="https://github.com/luowensheng/window/blob/main/docs/wasm-backend.md">docs/wasm-backend.md</a>.</p>
+        <a href="https://github.com/olivierdevelops/window/blob/main/docs/wasm-backend.md">docs/wasm-backend.md</a>.</p>
     </section>
 
     <!-- FOR DEVELOPERS -->
@@ -846,7 +855,7 @@ usecases/      how it does things     (run modes, init-window)
 infra/         external impls         (webview, sockets, http, wasm, native/*)
 orchestrator/  the wiring             (builds &amp; injects everything)
 appio/         CLI + config loading</code></pre></div>
-      <p>Full write-up: <a href="https://github.com/luowensheng/window/blob/main/docs/architecture.md">docs/architecture.md</a></p>
+      <p>Full write-up: <a href="https://github.com/olivierdevelops/window/blob/main/docs/architecture.md">docs/architecture.md</a></p>
     </section>
 
     <section id="protocol"><h3><span class="icn">🔌</span> Backend protocol</h3>
@@ -857,7 +866,7 @@ appio/         CLI + config loading</code></pre></div>
 <pre><code>→  {"id":"a1","function":"add","data":{"value":5},"done":true}   // frontend asks
 ←  {"id":"a1","function":"add","data":{"value":6},"done":true}   // backend replies
 ←  {"id":"server:x","function":"tick","data":{"t":"12:30"}}      // backend pushes</code></pre></div>
-      <p>Spec: <a href="https://github.com/luowensheng/window/blob/main/docs/backend-protocol.md">docs/backend-protocol.md</a>.
+      <p>Spec: <a href="https://github.com/olivierdevelops/window/blob/main/docs/backend-protocol.md">docs/backend-protocol.md</a>.
         Test with <code>go test ./...</code>.</p>
     </section>
 
@@ -895,11 +904,11 @@ appio/         CLI + config loading</code></pre></div>
       <div class="eyebrow">reference</div>
       <h2>Docs &amp; links</h2>
       <ul>
-        <li><a href="https://github.com/luowensheng/window/blob/main/docs/device-capabilities.md">Device capabilities</a> — camera, mic, speech, screen, input</li>
-        <li><a href="https://github.com/luowensheng/window/blob/main/docs/native-features.md">Native features</a> — fs, os, dialogs, canvas</li>
-        <li><a href="https://github.com/luowensheng/window/blob/main/docs/configuration.md">Configuration</a> — every <code>window.yaml</code> field</li>
-        <li><a href="https://github.com/luowensheng/window/blob/main/docs/backend-protocol.md">Backend protocol</a> · <a href="https://github.com/luowensheng/window/blob/main/docs/wasm-backend.md">WASM</a> · <a href="https://github.com/luowensheng/window/blob/main/docs/controlled-mode.md">Controlled mode</a></li>
-        <li><a href="https://github.com/luowensheng/window/blob/main/docs/architecture.md">Architecture</a> · <a href="https://github.com/luowensheng/window/blob/main/docs/cli.md">CLI</a> · <a href="https://github.com/luowensheng/window/blob/main/docs/demos.md">Demos</a></li>
+        <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/device-capabilities.md">Device capabilities</a> — camera, mic, speech, screen, input</li>
+        <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/native-features.md">Native features</a> — fs, os, dialogs, canvas</li>
+        <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/configuration.md">Configuration</a> — every <code>window.yaml</code> field</li>
+        <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/backend-protocol.md">Backend protocol</a> · <a href="https://github.com/olivierdevelops/window/blob/main/docs/wasm-backend.md">WASM</a> · <a href="https://github.com/olivierdevelops/window/blob/main/docs/controlled-mode.md">Controlled mode</a></li>
+        <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/architecture.md">Architecture</a> · <a href="https://github.com/olivierdevelops/window/blob/main/docs/cli.md">CLI</a> · <a href="https://github.com/olivierdevelops/window/blob/main/docs/demos.md">Demos</a></li>
       </ul>
     </section>
 
@@ -910,7 +919,7 @@ appio/         CLI + config loading</code></pre></div>
   <div class="wrap">
     <span>window · native desktop apps from a YAML file · MIT</span>
     <span class="links">
-      <a href="https://github.com/luowensheng/window">GitHub</a>
+      <a href="https://github.com/olivierdevelops/window">GitHub</a>
       <a href="#build">What you can build</a>
       <a href="#demos">Demos</a>
     </span>

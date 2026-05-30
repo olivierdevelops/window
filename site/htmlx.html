@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="The .htmlx format — write a whole native desktop app as matched-pair angle-bracket HTML. Capy sequence closers validate nesting at transpile time; one binary serves it. Cross-platform by default." />
+<title>.htmlx — angle-bracket HTML apps for window</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#7c7cff;--accent2:#58a6ff;--green:#3fb950;--red:#ff5f57;--yellow:#febc2e}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;font-size:15px}
+  a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:"SF Mono","Fira Code",ui-monospace,monospace}
+  svg{display:block;max-width:100%;height:auto}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  header.top{position:sticky;top:0;z-index:60;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  header.top .wrap{display:flex;align-items:center;gap:20px;height:58px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.3px}
+  .brand .mark{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+  header.top nav{margin-left:auto;display:flex;gap:22px;font-size:14px}
+  header.top nav a{color:var(--muted)}header.top nav a:hover{color:var(--text);text-decoration:none}
+  @media(max-width:680px){header.top nav{display:none}}
+
+  .hero{padding:56px 0 40px;border-bottom:1px solid var(--border);background:radial-gradient(900px 360px at 75% -10%,rgba(124,124,255,.16),transparent)}
+  .badge{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(124,124,255,.35);background:rgba(124,124,255,.12);color:var(--accent);border-radius:999px;padding:4px 12px;font-size:12px;margin-bottom:16px}
+  h1{font-size:2.6rem;line-height:1.08;letter-spacing:-1.4px;font-weight:800;margin-bottom:12px}
+  h1 code{font-size:2.6rem;color:var(--accent)}
+  .hero p.lead{color:var(--muted);font-size:1.06rem;max-width:680px;margin-bottom:20px}
+  .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:9px;font-weight:600;font-size:14px;border:1px solid transparent}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:var(--bg2);border-color:var(--border);color:var(--text)}
+  .btn:hover{transform:translateY(-1px);text-decoration:none}
+
+  section{padding:48px 0;border-bottom:1px solid var(--border)}
+  .eyebrow{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+  h2{font-size:1.6rem;letter-spacing:-.5px;margin-bottom:10px}
+  h3{font-size:1.1rem;margin:24px 0 8px}
+  p{color:var(--muted);margin-bottom:12px}
+  p strong,li strong{color:var(--text)}
+  ul{color:var(--muted);margin:0 0 12px 20px}li{margin-bottom:5px}
+  .lead-p{font-size:1.04rem;color:var(--muted);margin-bottom:16px;max-width:760px}
+
+  .code{position:relative;background:#0a0d12;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:12px 0}
+  .code .cap{padding:7px 14px;border-bottom:1px solid var(--border);font:12px ui-monospace,monospace;color:var(--muted);display:flex;gap:8px;align-items:center}
+  .code .cap .d{width:9px;height:9px;border-radius:50%}
+  .code pre{padding:14px 16px;overflow-x:auto}
+  .code code{font:12.5px/1.7 ui-monospace,monospace;color:#c9d1d9;white-space:pre}
+  .out{background:rgba(63,185,80,.05);border:1px solid rgba(63,185,80,.25);border-left:3px solid var(--green);border-radius:8px;padding:11px 14px;margin:12px 0}
+  .out .lbl{font:11px/1 ui-monospace,monospace;letter-spacing:.6px;color:var(--green);font-weight:700;display:block;margin-bottom:7px}
+  .out code{font:12.5px/1.6 ui-monospace,monospace;color:#aeb6c0;white-space:pre}
+  .err{background:rgba(255,95,87,.05);border:1px solid rgba(255,95,87,.25);border-left:3px solid var(--red)}
+  .err .lbl{color:var(--red)}
+
+  .sheet{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0}
+  .sheet th{text-align:left;padding:9px 12px;border-bottom:2px solid var(--border);color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+  .sheet td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  .sheet tr:hover td{background:var(--bg2)}
+  .sheet td:first-child{color:var(--text);white-space:nowrap}
+  .sheet code{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:12px;color:var(--accent2)}
+  .scroll{overflow-x:auto}
+
+  .diagram{margin:20px 0;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px}
+  .demos{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+  @media(max-width:760px){.demos{grid-template-columns:1fr}}
+  .demo{background:var(--bg2);border:1px solid var(--border);border-radius:13px;overflow:hidden}
+  .demo .dh{padding:14px 16px 4px}
+  .demo .dh b{font-size:1rem}.demo .dh p{font-size:12.5px;margin:4px 0 8px}
+  .tag{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:999px;background:rgba(124,124,255,.1);border:1px solid rgba(124,124,255,.3);color:var(--accent);margin:0 4px 6px 0}
+  .demo .code{margin:0;border:none;border-top:1px solid var(--border);border-radius:0}
+  .demo .code .cap{font-size:11px}
+  .run{display:inline-block;font:11.5px ui-monospace,monospace;color:var(--green);background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:4px 9px;margin:10px 16px 14px}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0}
+  @media(max-width:760px){.cols{grid-template-columns:1fr}}
+  footer{padding:30px 0;color:var(--muted);font-size:13px}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><span class="mark">W</span> window <span style="color:var(--muted);font-weight:500;font-size:13px">· .htmlx format</span></div>
+    <nav>
+      <a href="#how">How</a>
+      <a href="#tour">Tour</a>
+      <a href="#validate">Validated nesting</a>
+      <a href="#reference">Reference</a>
+      <a href="#components">Components</a>
+      <a href="#control">Control flow</a>
+      <a href="#demos">Demos</a>
+      <a href="capyscript.html">.cs →</a>
+      <a href="window-lang.html">.window →</a>
+      <a href="index.html">← Home</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="wrap">
+    <span class="badge">● matched pairs · nesting validated · cross-platform</span>
+    <h1>Apps as <code>&lt;angle-bracket&gt;</code> HTML</h1>
+    <p class="lead">A <code>.htmlx</code> file is a whole native desktop app written as <strong>real,
+      matched-pair HTML</strong> — <code>&lt;tag&gt;…&lt;/tag&gt;</code>. <code>window app.htmlx</code>
+      parses it, validates every closing tag against its opener, wraps it in a normalized
+      cross-platform document, and opens it. The parser is the
+      <a href="https://github.com/olivierdevelops/capy">Capy</a> engine's <em>sequence closers</em>.</p>
+    <div class="cta">
+      <a class="btn primary" href="#tour">See it →</a>
+      <a class="btn ghost" href="#demos">Browse demos</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- HOW -->
+  <section id="how">
+    <div class="eyebrow">how it works</div>
+    <h2>One generic rule parses every tag</h2>
+    <p class="lead-p">A single Capy function opens on <code>&lt;</code> + a captured tag
+      <em>name</em> and closes on the sequence <code>&lt;/</code> <em>name</em> <code>&gt;</code>.
+      Because the closer <strong>references the captured name</strong>, <code>&lt;/div&gt;</code>
+      closes only <code>&lt;div&gt;</code> — and a mismatch is a parse error.</p>
+    <div class="diagram">
+      <svg viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A .htmlx source is parsed by Capy sequence closers into window.yaml and static/index.html, then run by the window binary">
+        <defs><marker id="ah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#7c7cff"/></marker></defs>
+        <rect x="14" y="64" width="150" height="74" rx="11" fill="#161b22" stroke="#7c7cff"/>
+        <text x="89" y="98" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#c8c8ff">app.htmlx</text>
+        <text x="89" y="118" text-anchor="middle" font-family="system-ui" font-size="11" fill="#8b949e">&lt;tag&gt;…&lt;/tag&gt;</text>
+        <line x1="170" y1="101" x2="226" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="232" y="70" width="120" height="62" rx="11" fill="#1c2128" stroke="#30363d"/>
+        <text x="292" y="96" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">Capy</text>
+        <text x="292" y="114" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6e7681">seq closers</text>
+        <line x1="358" y1="101" x2="414" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="420" y="60" width="180" height="40" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="510" y="85" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#3fb950">window.yaml</text>
+        <rect x="420" y="108" width="180" height="40" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="510" y="133" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#c9d1d9">static/index.html</text>
+        <line x1="606" y1="101" x2="662" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="668" y="64" width="138" height="74" rx="11" fill="#1c2128" stroke="#7c7cff"/>
+        <text x="737" y="96" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">window</text>
+        <text x="737" y="116" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6e7681">native webview</text>
+      </svg>
+    </div>
+    <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>assets/htmlx.capy (the whole tag grammar)</div>
+<pre><code>function element
+    arg literal "&lt;"
+    arg capture name ident
+    arg capture attrs attribute*
+    arg literal "&gt;"
+    block_close_seq "&lt;/" name "&gt;"      # closer references the opener's name
+    write `&lt;${name}${attrs}&gt;${body}&lt;/${name}&gt;`
+end</code></pre></div>
+  </section>
+
+  <!-- TOUR -->
+  <section id="tour">
+    <div class="eyebrow">60-second tour</div>
+    <h2>A landing page, start to finish</h2>
+    <p class="lead-p">The root <code>&lt;app&gt;</code> sets the window title + size and wraps
+      everything in a full document. Everything inside is plain, nested HTML. Text is quoted.</p>
+    <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>hello.htmlx</div>
+<pre><code>&lt;app title="Hello" width="460" height="320"&gt;
+  &lt;h1&gt;"Hello, window"&lt;/h1&gt;
+  &lt;p class="muted"&gt;"A whole desktop app, written as matched-pair HTML."&lt;/p&gt;
+  &lt;a class="btn" href="https://github.com/olivierdevelops/window"&gt;"Docs"&lt;/a&gt;
+&lt;/app&gt;</code></pre></div>
+    <p>Transpiles to a normalized, escaped, cross-platform document (real output, body excerpt):</p>
+    <div class="out"><span class="lbl">GENERATED static/index.html</span>
+<code>&lt;!doctype html&gt;
+&lt;html lang="en"&gt;&lt;head&gt; … reset CSS … &lt;/head&gt;
+&lt;body&gt;&lt;main&gt;
+&lt;h1&gt;Hello, window&lt;/h1&gt;&lt;p class="muted"&gt;A whole desktop app, written as matched-pair HTML.&lt;/p&gt;&lt;a class="btn" href="https://github.com/olivierdevelops/window"&gt;Docs&lt;/a&gt;
+&lt;/main&gt;&lt;/body&gt;&lt;/html&gt;</code></div>
+    <span class="run">window demos/htmlx/hello.htmlx</span>
+  </section>
+
+  <!-- VALIDATED NESTING -->
+  <section id="validate">
+    <div class="eyebrow">the payoff</div>
+    <h2>Closing tags are checked against their openers</h2>
+    <p class="lead-p">This is the one correctness win HTML's verbosity buys you, and you get it at
+      <strong>transpile time</strong>. A closing tag that doesn't match the open tag it should is a
+      hard error — not a silently mis-rendered page.</p>
+    <div class="cols">
+      <div class="code"><div class="cap"><span class="d" style="background:#ff5f57"></span>bad.htmlx</div>
+<pre><code>&lt;app title="X" width="640" height="520"&gt;
+  &lt;div class="card"&gt;&lt;p&gt;"oops"&lt;/div&gt;
+&lt;/app&gt;</code></pre></div>
+      <div class="out err"><span class="lbl">TRANSPILE ERROR</span>
+<code>2:28: no library function
+matches token "&lt;/"
+  hint: did you mean "&lt;"?
+  &lt;p&gt; is never closed
+  by &lt;/div&gt;</code></div>
+    </div>
+    <p>The parser tracks every open tag and demands its own matching close. Unclosed tags at
+      end-of-file and wrong closers are rejected the same way.</p>
+  </section>
+
+  <!-- REFERENCE -->
+  <section id="reference">
+    <div class="eyebrow">format reference</div>
+    <h2>Everything you can write</h2>
+    <div class="scroll"><table class="sheet">
+      <thead><tr><th>Form</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td><code>&lt;app title="…" width="…" height="…"&gt; … &lt;/app&gt;</code></td><td>Root: window title + size; wraps the body in a full document</td></tr>
+        <tr><td><code>&lt;tag attr="v"&gt; … &lt;/tag&gt;</code></td><td>Any matched-pair element; nests freely, closer must match</td></tr>
+        <tr><td><code>&lt;tag attr="v" /&gt;</code></td><td>Self-closing void element (<code>&lt;input /&gt;</code>, <code>&lt;br /&gt;</code>, <code>&lt;hr /&gt;</code>)</td></tr>
+        <tr><td><code>"quoted text"</code></td><td>A text node — escaped once. Put literal markup like <code>"&lt;p&gt;"</code> inside <code>&lt;code&gt;</code></td></tr>
+        <tr><td><code>attr="value"</code></td><td>Attributes pass through verbatim onto the tag</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Built-in utility classes</h3>
+    <p>The wrapper ships a cross-platform reset plus: <code>.card</code>, <code>.row</code>,
+      <code>.grid</code>, <code>.btn</code>, <code>.muted</code>, <code>.badge</code>. Combine with
+      inline <code>style="…"</code> for one-offs.</p>
+    <h3>The one rule to remember</h3>
+    <p>Text is <strong>quoted</strong>. One quoted string is one token, so multi-word text and even
+      literal angle brackets live happily inside quotes. Bare unquoted prose between tags is not
+      supported — if you want that, the <a href="window-lang.html"><code>.window</code></a> language
+      handles free prose with indentation instead.</p>
+  </section>
+
+  <!-- COMPONENTS / METAPROGRAMMING -->
+  <section id="components">
+    <div class="eyebrow">metaprogramming</div>
+    <h2>Define your own HTML tags</h2>
+    <p class="lead-p">A <code>.htmlx</code> source can <strong>define new tags</strong> with a
+      <code>&lt;component&gt;</code> block, then use them as if they were built in. It's all HTML:
+      <code>props="…"</code> declares named attributes you read as <code>{prop}</code> (escaped
+      automatically), and <code>&lt;slot&gt;</code> marks where nested children go. No JavaScript,
+      no grammar to learn — <code>&lt;component&gt;</code> expands to a real tag at transpile time.</p>
+    <div class="cols">
+      <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>define it once — pure HTML</div>
+<pre><code>&lt;component name="card" props="title"&gt;
+  &lt;section class="card"&gt;
+    &lt;h3&gt;{title}&lt;/h3&gt;
+    &lt;slot&gt;&lt;/slot&gt;
+  &lt;/section&gt;
+&lt;/component&gt;</code></pre></div>
+      <div class="code"><div class="cap"><span class="d" style="background:#3fb950"></span>use it like built-in HTML</div>
+<pre><code>&lt;card title="Welcome"&gt;
+  &lt;badge&gt;"New"&lt;/badge&gt;
+  &lt;p&gt;"Children fill the slot."&lt;/p&gt;
+&lt;/card&gt;</code></pre>
+      <div class="out" style="margin:0;border-radius:0;border-left:none;border-top:1px solid var(--border)"><span class="lbl">EXPANDS TO</span>
+<code>&lt;section class="card"&gt;
+  &lt;h3&gt;Welcome&lt;/h3&gt;
+  &lt;span class="badge"&gt;New&lt;/span&gt;
+  &lt;p&gt;Children fill the slot.&lt;/p&gt;
+&lt;/section&gt;</code></div></div>
+    </div>
+    <p>Props render <strong>escaped</strong>, so components are XSS-safe by default; add the bare
+      <code>void</code> attribute for a self-closing tag like
+      <code>&lt;component name="avatar" props="name" void&gt;</code> → <code>&lt;avatar name="Ada" /&gt;</code>.
+      The <a href="https://github.com/olivierdevelops/window/blob/main/demos/htmlx/components.htmlx">components.htmlx</a>
+      demo defines <code>&lt;card&gt;</code>, <code>&lt;stat&gt;</code>, <code>&lt;badge&gt;</code> and
+      <code>&lt;avatar/&gt;</code> and builds a dashboard from them.</p>
+    <span class="run">window demos/htmlx/components.htmlx</span>
+  </section>
+
+  <!-- CONTROL FLOW -->
+  <section id="control">
+    <div class="eyebrow">compile-time</div>
+    <h2>Control flow — loop, branch, switch</h2>
+    <p class="lead-p">Three HTML-native tags run <strong>at transpile time</strong>: <code>&lt;for&gt;</code>,
+      <code>&lt;if&gt;</code>/<code>&lt;else&gt;</code>, and <code>&lt;switch&gt;</code>. There's no runtime
+      data model — each construct is evaluated while the file compiles, so the shipped page is plain
+      static HTML. They compose: an <code>&lt;if&gt;</code> inside a <code>&lt;for&gt;</code> sees the
+      loop variable as <code>{name}</code>.</p>
+    <div class="cols">
+      <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>loop, branch &amp; switch</div>
+<pre><code>&lt;for each="admin, editor, guest" as="role"&gt;
+  &lt;section class="card"&gt;
+    &lt;h3&gt;"{role}"&lt;/h3&gt;
+    &lt;switch value="{role}"&gt;
+      &lt;case is="admin"&gt;  &lt;p&gt;"Full control."&lt;/p&gt;   &lt;/case&gt;
+      &lt;case is="editor"&gt; &lt;p&gt;"Create &amp; edit."&lt;/p&gt;  &lt;/case&gt;
+      &lt;default&gt;          &lt;p&gt;"View only."&lt;/p&gt;      &lt;/default&gt;
+    &lt;/switch&gt;
+  &lt;/section&gt;
+&lt;/for&gt;</code></pre></div>
+      <div class="out" style="margin:0;border-radius:0;border-left:none;border-top:1px solid var(--border)"><span class="lbl">EXPANDS TO</span>
+<code>&lt;section class="card"&gt;&lt;h3&gt;admin&lt;/h3&gt;
+  &lt;p&gt;Full control.&lt;/p&gt;&lt;/section&gt;
+&lt;section class="card"&gt;&lt;h3&gt;editor&lt;/h3&gt;
+  &lt;p&gt;Create &amp; edit.&lt;/p&gt;&lt;/section&gt;
+&lt;section class="card"&gt;&lt;h3&gt;guest&lt;/h3&gt;
+  &lt;p&gt;View only.&lt;/p&gt;&lt;/section&gt;</code></div>
+    </div>
+    <p><code>&lt;for each="a, b, c" as="x"&gt;</code> repeats its body once per comma-separated item;
+      <code>&lt;if value="…" is="…"&gt;</code> picks a branch (use <code>in="a, b"</code> to test list
+      membership, and an optional <code>&lt;else&gt;</code>); <code>&lt;switch value="…"&gt;</code> runs the
+      first matching <code>&lt;case is="…"&gt;</code> or the <code>&lt;default&gt;</code>. Each tag sits on its
+      own line. The <a href="https://github.com/olivierdevelops/window/blob/main/demos/htmlx/control.htmlx">control.htmlx</a>
+      demo builds a nav, a banner and a role grid this way.</p>
+    <span class="run">window demos/htmlx/control.htmlx</span>
+  </section>
+
+  <!-- DEMOS -->
+  <section id="demos">
+    <div class="eyebrow">see it run</div>
+    <h2>Demos</h2>
+    <div class="demos">
+      <div class="demo">
+        <div class="dh"><b>landing</b><p>Cards in a responsive grid, badges, buttons.</p>
+          <span class="tag">grid</span><span class="tag">cards</span></div>
+        <div class="code"><div class="cap">landing.htmlx</div>
+<pre><code>&lt;div class="grid"&gt;
+  &lt;div class="card"&gt;
+    &lt;h3&gt;"Matched pairs"&lt;/h3&gt;
+    &lt;p&gt;"Real &lt;tag&gt;…&lt;/tag&gt;, validated."&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre></div>
+        <span class="run">window demos/htmlx/landing.htmlx</span>
+      </div>
+      <div class="demo">
+        <div class="dh"><b>article</b><p>Deep inline nesting inside paragraphs.</p>
+          <span class="tag">em</span><span class="tag">blockquote</span></div>
+        <div class="code"><div class="cap">article.htmlx</div>
+<pre><code>&lt;p&gt;"A paragraph with "&lt;em&gt;"emphasis"&lt;/em&gt;
+   ", a "&lt;a href="#"&gt;"link"&lt;/a&gt;
+   " and "&lt;strong&gt;"weight"&lt;/strong&gt;"."&lt;/p&gt;</code></pre></div>
+        <span class="run">window demos/htmlx/article.htmlx</span>
+      </div>
+      <div class="demo">
+        <div class="dh"><b>signup</b><p>Self-closing void elements in a form.</p>
+          <span class="tag">input /</span><span class="tag">form</span></div>
+        <div class="code"><div class="cap">signup.htmlx</div>
+<pre><code>&lt;form&gt;
+  &lt;label&gt;"Email"&lt;/label&gt;
+  &lt;input type="email" placeholder="you@x.com" /&gt;
+  &lt;br /&gt;
+  &lt;button type="submit"&gt;"Create"&lt;/button&gt;
+&lt;/form&gt;</code></pre></div>
+        <span class="run">window demos/htmlx/signup.htmlx</span>
+      </div>
+      <div class="demo">
+        <div class="dh"><b>profile</b><p>Lists, badges, a card layout.</p>
+          <span class="tag">ul</span><span class="tag">badge</span></div>
+        <div class="code"><div class="cap">profile.htmlx</div>
+<pre><code>&lt;ul&gt;
+  &lt;li&gt;&lt;a href="#"&gt;"The notes"&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href="#"&gt;"The algorithm"&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;span class="badge"&gt;"1843"&lt;/span&gt;</code></pre></div>
+        <span class="run">window demos/htmlx/profile.htmlx</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- .htmlx vs .window -->
+  <section id="vs">
+    <div class="eyebrow">which one</div>
+    <h2><code>.htmlx</code> vs <code>.window</code></h2>
+    <div class="scroll"><table class="sheet">
+      <thead><tr><th></th><th>.htmlx</th><th>.window</th></tr></thead>
+      <tbody>
+        <tr><td>You write</td><td>HTML markup, by hand</td><td>High-level widgets + state</td></tr>
+        <tr><td>Structure</td><td>Matched <code>&lt;tag&gt;…&lt;/tag&gt;</code></td><td>Keywords + indentation</td></tr>
+        <tr><td>State / events</td><td>—</td><td>Reactive store, <code>on</code>, actions</td></tr>
+        <tr><td>Backend calls</td><td>—</td><td>In-process Go handlers</td></tr>
+        <tr><td>Best for</td><td>Static pages, full layout control</td><td>Interactive apps</td></tr>
+      </tbody>
+    </table></div>
+    <p>Both are transpiled by Capy; both produce a plain <code>window</code> app.</p>
+  </section>
+
+  <!-- LEARN MORE -->
+  <section id="learn">
+    <div class="eyebrow">go deeper</div>
+    <h2>Learn more</h2>
+    <ul>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/assets/htmlx.capy">assets/htmlx.capy</a> — the whole format, defined as a Capy library</li>
+      <li><a href="https://github.com/olivierdevelops/window/tree/main/demos/htmlx">demos/htmlx/</a> — every <code>.htmlx</code> demo above</li>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/capy-angle-bracket-html-now-supported.md">capy-angle-bracket-html-now-supported.md</a> — how sequence closers make this work</li>
+      <li><a href="window-lang.html">The <code>.window</code> language</a> — the interactive, stateful sibling</li>
+      <li><a href="https://github.com/olivierdevelops/capy">Capy</a> — the transpiler engine</li>
+    </ul>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>window · the .htmlx format · MIT</span>
+    <span><a href="index.html">← Home</a> · <a href="https://github.com/olivierdevelops/window">GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

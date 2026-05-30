@@ -92,6 +92,8 @@
       <a href="#handlers">Handlers</a>
       <a href="#demos">Demos</a>
       <a href="#catalog">All 34</a>
+      <a href="htmlx.html">.htmlx →</a>
+      <a href="capyscript.html">.cs →</a>
       <a href="index.html">← Home</a>
     </nav>
   </div>
@@ -106,7 +108,7 @@
       app.window</code> transpiles it to a frontend <em>and</em> a <code>window.yaml</code>, then
       opens it. UI, events and state are generated into the page; any backend call is served
       <strong>in-process</strong> by Go handlers built into the binary. The transpiler under the
-      hood is the <a href="https://github.com/luowensheng/capy">Capy</a> engine — you never see it.</p>
+      hood is the <a href="https://github.com/olivierdevelops/capy">Capy</a> engine — you never see it.</p>
     <div class="cta">
       <a class="btn primary" href="#tour">60-second tour →</a>
       <a class="btn ghost" href="#catalog">Browse 34 demos</a>
@@ -243,7 +245,7 @@ render();</code></pre></div>
     <div class="eyebrow">in-process backend</div>
     <h2>Built-in Go handlers — no sidecar</h2>
     <p class="lead-p">Call these from any <code>.window</code> source with <code>get</code> / <code>send</code>.
-      They run inside the <code>window</code> process (see <a href="https://github.com/luowensheng/window/blob/main/infra/handlers.go"><code>infra/handlers.go</code></a>)
+      They run inside the <code>window</code> process (see <a href="https://github.com/olivierdevelops/window/blob/main/infra/handlers.go"><code>infra/handlers.go</code></a>)
       — no Python, no Node, no socket. Add your own there.</p>
     <div class="scroll"><table class="sheet">
       <thead><tr><th>Handler</th><th>Params</th><th>Returns</th></tr></thead>
@@ -451,11 +453,11 @@ end</code></pre></div>
     <div class="eyebrow">go deeper</div>
     <h2>Learn more</h2>
     <ul>
-      <li><a href="https://github.com/luowensheng/window/blob/main/docs/using-capy.md">using-capy.md</a> — install, the model, UI / events / state, in-process Go</li>
-      <li><a href="https://github.com/luowensheng/window/blob/main/docs/capy-full-apps.md">capy-full-apps.md</a> — every feature with a worked demo + the full library</li>
-      <li><a href="https://github.com/luowensheng/window/blob/main/assets/window.capy">assets/window.capy</a> — the language definition (a Capy library)</li>
-      <li><a href="https://github.com/luowensheng/window/tree/main/demos/capy">demos/capy/</a> — all 34 <code>.window</code> sources</li>
-      <li><a href="https://github.com/luowensheng/capy">Capy</a> — the transpiler engine</li>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/using-capy.md">using-capy.md</a> — install, the model, UI / events / state, in-process Go</li>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/capy-full-apps.md">capy-full-apps.md</a> — every feature with a worked demo + the full library</li>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/assets/window.capy">assets/window.capy</a> — the language definition (a Capy library)</li>
+      <li><a href="https://github.com/olivierdevelops/window/tree/main/demos/capy">demos/capy/</a> — all 34 <code>.window</code> sources</li>
+      <li><a href="https://github.com/olivierdevelops/capy">Capy</a> — the transpiler engine</li>
     </ul>
   </section>
 
@@ -464,7 +466,7 @@ end</code></pre></div>
 <footer>
   <div class="wrap">
     <span>window · the .window app language · MIT</span>
-    <span><a href="index.html">← Home</a> · <a href="https://github.com/luowensheng/window">GitHub</a></span>
+    <span><a href="index.html">← Home</a> · <a href="https://github.com/olivierdevelops/window">GitHub</a></span>
   </div>
 </footer>
 

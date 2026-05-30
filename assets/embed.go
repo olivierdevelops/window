@@ -43,3 +43,9 @@ var NativeInputJS []byte
 
 //go:embed window.capy
 var WindowCapyLib []byte
+
+//go:embed htmlx.capy
+var HtmlxCapyLib []byte
+
+//go:embed capyscript.capy
+var CapyScriptLib []byte

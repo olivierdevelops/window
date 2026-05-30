@@ -10,7 +10,7 @@ window demos/capy/counter.window
 `window` recognizes the `.window` extension, transpiles the source to a full
 app (`window.yaml` + `static/index.html` + `static/app.js`), and opens it —
 all in one binary. The transpiler under the hood is the
-[Capy](https://github.com/luowensheng/capy) engine, driven by the language
+[Capy](https://github.com/olivierdevelops/capy) engine, driven by the language
 definition in [`assets/window.capy`](../../assets/window.capy); you never
 invoke it directly.
 

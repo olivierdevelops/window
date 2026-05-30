@@ -1,0 +1,26 @@
+<app title="window — native desktop, web tech" width="760" height="640">
+  <span class="badge">"v1.2"</span>
+  <h1>"Ship a desktop app from one HTML file"</h1>
+  <p class="muted">"No build step, no Electron. The "<b>"window"</b>" binary opens a native webview around your markup."</p>
+
+  <div class="grid">
+    <div class="card">
+      <h3>"Matched pairs"</h3>
+      <p>"Write real "<code>"<tag>…</tag>"</code>" — nesting is validated at transpile time."</p>
+    </div>
+    <div class="card">
+      <h3>"Cross-platform"</h3>
+      <p>"WebKit, WebView2 and WebKitGTK, normalized by one reset stylesheet."</p>
+    </div>
+    <div class="card">
+      <h3>"Zero runtime"</h3>
+      <p>"The page is plain HTML once transpiled. Nothing ships but your content."</p>
+    </div>
+  </div>
+
+  <hr />
+  <div class="row">
+    <a class="btn" href="https://github.com/olivierdevelops/window">"Get started"</a>
+    <a href="https://olivierdevelops.github.io/capy/">"How the parser works"</a>
+  </div>
+</app>

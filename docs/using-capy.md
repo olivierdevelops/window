@@ -9,7 +9,7 @@
 > For the conceptual case see [capy-integration.md](capy-integration.md);
 > for every feature with demos see [capy-full-apps.md](capy-full-apps.md).
 > The authoritative grammar/API is the
-> [Capy integration guide](https://github.com/luowensheng/capy).
+> [Capy integration guide](https://github.com/olivierdevelops/capy).
 
 ---
 
@@ -59,11 +59,11 @@ binary holds any handlers.
 
 ```sh
 # CLI — for a build step or your dev loop
-go install github.com/luowensheng/capy/cmd/capy@latest
+go install github.com/olivierdevelops/capy/cmd/capy@latest
 capy version
 
 # Go library — to embed generation in the window binary (see §9)
-go get github.com/luowensheng/capy@latest
+go get github.com/olivierdevelops/capy@latest
 ```
 
 Confirm it works:
@@ -421,7 +421,7 @@ codegen, `appio/` dispatches the `.window` extension.
 // infra/capy_codegen.go — infra may import third-party (no domain logic)
 package infra
 
-import "github.com/luowensheng/capy"
+import "github.com/olivierdevelops/capy"
 
 // GenerateCapyApp runs a .window source through the embedded language
 // definition and returns the app's files (window.yaml, static/*).

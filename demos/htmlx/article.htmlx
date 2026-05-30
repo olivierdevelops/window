@@ -1,0 +1,22 @@
+<app title="Reading view" width="680" height="720">
+  <span class="badge">"Essay"</span>
+  <h1>"Why matched pairs matter"</h1>
+  <p class="muted">"On deeply nested markup and the tags that close it."</p>
+  <hr />
+
+  <p>"Angle-bracket HTML reads the way it always has: an opening "<code>"<p>"</code>
+     " is answered by a closing "<code>"</p>"</code>". The "<b>"window"</b>
+     " transpiler treats that pairing as structure, not decoration."</p>
+
+  <p>"Consider a paragraph with "<em>"emphasis"</em>", a "<a href="https://example.com">"link"</a>
+     ", and "<strong>"strong"</strong>" weight all inline. Each inline element opens and "
+     "closes inside the paragraph, and the parser tracks every level."</p>
+
+  <blockquote>
+    <p>"A stray "<code>"</div>"</code>" where a "<code>"</p>"</code>
+       " was expected is no longer a silent bug — it is a transpile error."</p>
+  </blockquote>
+
+  <p>"That single property — closers bound to their openers — is the whole reason "
+     "this works at all."</p>
+</app>

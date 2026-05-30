@@ -1,0 +1,37 @@
+<app title="Control Flow" width="520" height="460">
+  <h1>"Compile-time control flow"</h1>
+
+  <p class="muted">"A for-loop builds the nav; each label is a loop variable."</p>
+  <nav class="row">
+    <for each="Home, Docs, About, Contact" as="label">
+      <a class="btn" href="#">"{label}"</a>
+    </for>
+  </nav>
+
+  <p class="muted">"An if-statement picks a branch at transpile time."</p>
+  <if value="admin" is="admin">
+    <p class="badge">"You are an admin — edit access granted."</p>
+  <else>
+    <p class="badge">"Read-only access."</p>
+  </if>
+
+  <p class="muted">"for + switch together: one card per role."</p>
+  <div class="grid">
+    <for each="admin, editor, guest" as="role">
+      <section class="card">
+        <h3>"{role}"</h3>
+        <switch value="{role}">
+          <case is="admin">
+            <p>"Full control of the workspace."</p>
+          </case>
+          <case is="editor">
+            <p>"Can create and edit content."</p>
+          </case>
+          <default>
+            <p>"Can view published pages."</p>
+          </default>
+        </switch>
+      </section>
+    </for>
+  </div>
+</app>
