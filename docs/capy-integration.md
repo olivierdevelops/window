@@ -1,49 +1,51 @@
-# Building UI + Backend in One Language with Capy
+# Integrating Capy: define your own syntax, generate any text
 
-`webview_gui` already lets you ship a native desktop app from three
-independent artifacts: an HTML/CSS/JS frontend, a `window.yaml` config,
-and a backend (Python subprocess, WASM module, or none). The catch is
-that those three artifacts are written in three different languages,
-wired together by hand-maintained string keys — a `BACKEND.call("greet", …)`
-in JS must match an `@app.handle("greet")` in Python, which must match a
-`run_backend_script:` line in YAML. Nothing checks that they agree.
+> **Version:** targets **Capy `v0.20.0`** (module
+> `github.com/olivierdevelops/capy`). `window` pins it in `go.mod`; during
+> local development a `replace` points at a checkout of the Capy repo. Capy is
+> pre-1.0 — the library `.capy` schema may change between minor versions, so
+> check [Capy's CHANGELOG](https://github.com/olivierdevelops/capy/blob/main/CHANGELOG.md)
+> when bumping.
 
-[**Capy**](https://github.com/olivierdevelops/capy) is a transpiler engine
-with **zero default grammar**. You define a tiny source language in a
-`.capy` library, and Capy gives you a code generator that emits *any*
-textual target — HTML, JS, Python, Go, YAML, all at once. This document
-shows how to put one Capy library in front of `webview_gui` so a single
-source file generates the frontend, the backend, *and* the config — with
-the call/handler contract enforced by the grammar instead of by hope.
+[**Capy**](https://github.com/olivierdevelops/capy) is a transpiler engine with
+**zero default grammar**. You define a small source language in a `.capy`
+*library*, and Capy gives you a parser + code generator that turns scripts
+written in *your* language into *any* textual output — HTML, JS, Python, Go,
+YAML, TS, SQL — one file or many, in a single pass. There is no separate
+template or config language: the library is itself written in Capy's native
+syntax, and the renderer walks the parsed AST directly.
 
-It also covers why this shape is ideal for **AI agents**: an agent emits
-~50 lines of a domain language you control, Capy expands it into the
-800+ lines of a working app, and anything outside the grammar is rejected
-before a single file is written.
+This document is a practical, self-contained integration guide. It is written
+so **any Go application** (not just `window`) can embed Capy, with `window` used
+as the running example. You'll find: the embedding API, the current library
+syntax, the multi-file pattern, grammar-as-contract validation, introspection
+for editors/agents, host sandboxing, and the v0.20.0 CLI/tooling.
 
 ---
 
 ## Table of contents
 
-1. [The wiring problem Capy solves](#the-wiring-problem)
-2. [How Capy fits the VHCO architecture](#how-capy-fits)
-3. [A 10-minute integration: the `app.capy` language](#ten-minute)
-4. [One source → frontend + backend + config](#one-source-many-files)
-5. [Enforcing the call/handler contract in the grammar](#contract)
-6. [Targeting every run mode from one DSL](#run-modes)
-7. [Other interesting things Capy unlocks](#interesting)
-8. [AI agents that build apps](#ai-agents)
-9. [Embedding the Capy compiler in `window`](#embedding)
-10. [Suggested rollout](#rollout)
+1. [Why embed Capy](#why)
+2. [Embed in any Go program — the canonical flow](#embed)
+3. [Authoring a library: current syntax reference](#syntax)
+4. [One source → many files](#multi-file)
+5. [Grammar-as-contract: validation & errors](#contract)
+6. [Introspection, docs & editor/agent integration](#introspect)
+7. [Host capabilities & sandboxing](#hosts)
+8. [CLI & tooling (v0.20.0)](#cli)
+9. [`window` specifics: formats, run modes, `--capy`](#window)
+10. [AI agents that build apps](#ai-agents)
+11. [Versioning & compatibility](#versioning)
+12. [Suggested rollout](#rollout)
 
 ---
 
-<a name="the-wiring-problem"></a>
+<a name="why"></a>
 
-## 1. The wiring problem Capy solves
+## 1. Why embed Capy
 
-Look at the `counter` demo. It is four files that must agree on strings
-and shapes that no compiler verifies:
+A real app is usually several artifacts that must agree on strings and shapes
+no compiler checks. `window`'s `counter` demo is four files:
 
 ```
 demos/counter/
@@ -53,472 +55,517 @@ demos/counter/
 └── static/index.html  <button onclick="…">                ← must match app.js
 ```
 
-If you rename `add` → `increment` in `main.py`, nothing tells you the
-button in `app.js` is now dead. If the Python handler sends
-`{"value": …}` but the JS reads `data.count`, you find out at runtime.
-The "app" is an emergent property of four files that share no source of
-truth.
+Rename `add` → `increment` in `main.py` and nothing tells you the JS button is
+now dead; send `{"value": …}` from Python while JS reads `data.count` and you
+find out at runtime. The "app" is an emergent property of files that share no
+source of truth.
 
-Capy lets you declare the app *once*, in a language whose vocabulary is
-exactly the concepts of a webview_gui app — windows, actions, handlers,
-events, native capabilities — and generate all four files from it. The
-shared keys (`add`, the `{value}` shape) are written once and stamped
-into every artifact, so they cannot drift.
+Capy lets you declare the app **once**, in a language whose vocabulary is
+exactly your domain's concepts, and project that single source into every
+artifact. Shared keys are written once and stamped into each output, so they
+cannot drift. Embedding Capy is worthwhile whenever you:
 
-> Capy never replaces `webview_gui`. It sits *in front of* it as a
-> source-generation step. The `window` binary, the socket protocol, the
-> `BACKEND`/`NATIVE` JS globals — all unchanged. Capy just authors the
-> files you would otherwise hand-write.
+- ship a CLI/app that takes config in a friendlier-than-YAML DSL — write the
+  parser in ~50 lines of Capy instead of 500 of Go;
+- build a code generator (schema → migrations, IDL → client+server) and want
+  users to write `model User { name : string }` instead of a Go builder API;
+- want hot-swappable grammars — read a library at startup, let users contribute
+  new ones with no recompile;
+- need a **safe** interface for AI-generated input: anything outside the
+  grammar is a parse error, before any file is written ([§10](#ai-agents)).
 
----
-
-<a name="how-capy-fits"></a>
-
-## 2. How Capy fits the VHCO architecture
-
-`webview_gui` is layered `domain → infra → features → orchestrator →
-appio → main`, where each layer only imports below it. Capy enters at
-two possible points, both clean:
-
-- **Build-time (recommended first step).** A `window codegen app.capy`
-  step (or a plain `go run`/`Makefile` target) turns one source file
-  into `static/`, `main.py`, and `window.yaml` *before* `window` ever
-  runs. `webview_gui` needs **zero code changes** — it loads the
-  generated `window.yaml` exactly as today. Capy is just a preprocessor
-  in your dev loop.
-
-- **Embedded (later, optional).** Add a thin `infra/capy_codegen.go`
-  that calls the Capy Go API (`capy.NewLibraryFromFile` → `lib.RunMulti`)
-  and an `appio` flag `window --capy app.capy`. This obeys the layer
-  rules: `infra` may import third-party packages (Capy is pure Go, no
-  CGo), `appio` orchestrates it, `domain` stays untouched. See
-  [§9](#embedding).
-
-Because Capy is **pure Go with no CGo**, it co-exists with your existing
-`webview_go` (CGo) and `wazero` (pure Go) dependencies without changing
-your build matrix.
+> Capy never replaces your runtime. It sits *in front of* it as a
+> source-generation step — it authors the files you would otherwise hand-write.
 
 ---
 
-<a name="ten-minute"></a>
+<a name="embed"></a>
 
-## 3. A 10-minute integration: the `app.capy` language
+## 2. Embed in any Go program — the canonical flow
 
-A Capy **library** (`.capy` file) defines your source language. Below is
-a starter library that understands a handful of app concepts. Each
-`function` block declares a piece of grammar and the text it expands to.
+Capy is **pure Go, no CGo**, so it drops into any module without changing your
+build matrix. The whole API is small:
 
+```go
+import "github.com/olivierdevelops/capy"
+
+// 1. Compile a library (your language definition). Reuse it across many runs.
+lib, err := capy.NewLibrary(librarySrc)        // from an in-memory string
+//  or: lib, err := capy.NewLibraryFromFile("app.capy")
+
+// 2a. Single-output: run a script, get the rendered text.
+out, err := lib.Run(scriptSrc)                 // string
+
+// 2b. Multi-output: get the primary string + every `file "..."` block.
+primary, files, err := lib.RunMulti(scriptSrc) // (string, map[string]string, error)
 ```
-# app.capy — a tiny language for webview_gui apps.
-# `extension` / output targets are set per-file below.
 
-# ── A window declaration sets the page title and size ────────────────
-function window
-    arg literal "window"
-    arg capture title  string
-    arg capture w      int default "800"
-    arg capture h      int default "800"
-    block_closer end
-    template
-        <!doctype html>
-        <html><head><meta charset="utf-8"><title>${decoded title}</title>
-        <link rel="stylesheet" href="/static/app.css"></head>
-        <body>
-        <main id="app">
-        ${body}
-        </main>
-        <script src="/static/app.js"></script>
-        </body></html>
-    end
+`Library` is safe to reuse across many `Run`/`RunMulti` calls (each call runs a
+fresh accumulating context); it is not safe for concurrent *mutation*, but
+`Run` itself is re-entrant on a fixed library. Other library methods:
+
+| Method | Returns |
+|---|---|
+| `lib.Extension()` | the library's declared `extension` (e.g. `"yaml"`) — pick the right output suffix |
+| `lib.OutputFile()` | optional declared `output_file` name for single-output libraries |
+| `lib.FunctionNames()` | sorted names of every declared function |
+| `lib.Introspect()` | `[]FunctionInfo` — args, types, block kind, docs ([§6](#introspect)) |
+| `lib.CommentMarkers()` | the library's declared line-comment markers |
+| `lib.SetHost(h)` | install a `domain.Host` for `env`/`arg`/`read_file` ([§7](#hosts)) |
+| `capy.RenderLibraryDocs(lib)` | Markdown reference docs for your language |
+
+### The integration `window` actually ships
+
+`window`'s `infra/capy_codegen.go` is the whole embedding — it obeys the VHCO
+layering (only `infra` imports the third-party package; `appio` orchestrates a
+flag; `domain`/`features`/`orchestrator` are untouched):
+
+```go
+package infra
+
+import "github.com/olivierdevelops/capy" // pure Go, no CGo
+
+// GenerateCapyApp compiles a Capy library and runs a source script through it,
+// returning the generated app files (path -> contents): window.yaml, the
+// static/ frontend, and any other `file "..."` blocks the library declares.
+//
+// The default Capy host is NoOpHost, so generation cannot touch the
+// environment or filesystem — safe to run on untrusted source.
+func GenerateCapyApp(librarySrc, scriptSrc string) (map[string]string, error) {
+	lib, err := capy.NewLibrary(librarySrc)
+	if err != nil {
+		return nil, err
+	}
+	primary, files, err := lib.RunMulti(scriptSrc)
+	if err != nil {
+		return nil, err
+	}
+	if files == nil {
+		files = map[string]string{}
+	}
+	// If the library produced a primary output (no file blocks), fall back to
+	// its declared output_file name.
+	if primary != "" {
+		if out := lib.OutputFile(); out != "" {
+			files[out] = primary
+		}
+	}
+	return files, nil
+}
+```
+
+`appio/cli.go` then writes those files to a temp dir and loads the generated
+`window.yaml` exactly like a hand-written one — see
+[`loadWindowLang`/`transpileSource`](../appio/cli.go).
+
+---
+
+<a name="syntax"></a>
+
+## 3. Authoring a library: current syntax reference
+
+A `.capy` library has three parts: **header declarations**, **function
+definitions** (your grammar), and **output blocks** (the renderer). The
+snippets below use the *current* (v0.20.0) syntax — the same syntax the shipped
+[`assets/window.capy`](../assets/window.capy) library uses.
+
+### 3.1 Header declarations
+
+```capy
+extension yaml          # default output file suffix (no dot)
+
+comments                # line-comment markers your scripts may use
+    line "#"
 end
 
-# ── A button that calls a backend action ─────────────────────────────
+context                 # the accumulator: named fields with defaults that
+    title  "App"        # functions mutate and output blocks read.
+    width  480
+    ui     []           # lists start empty; push to them with `append`
+    calls  []
+end
+```
+
+- `extension <ext>` — the suffix `Extension()` reports.
+- `comments { line "x" … }` — without it, scripts have no comment syntax.
+- `context { … }` — the shared, mutable state for one run. Scalars (`"App"`,
+  `480`) and lists (`[]`) are declared with defaults; functions read and write
+  them with `set` / `append`; output blocks read them with `${ … }`.
+
+### 3.2 Function definitions — the grammar
+
+Each `function` declares one statement of your language: the literal keywords it
+must contain, the typed holes it captures, whether it wraps a block, and what it
+does to the `context`.
+
+```capy
+# A block statement: `app "Title" 800 600 … end`
+function app
+    arg literal "app"
+    arg capture title string
+    arg capture w     int default "480"     # optional trailing arg + default
+    arg capture h     int default "640"
+    block_closer end                          # this function wraps a body
+    set context.title title
+    set context.width  w
+    set context.height h
+end
+
+# A leaf statement: `button "Increment" calls add`
 function button
     arg literal "button"
     arg capture label  string
     arg literal "calls"
     arg capture action ident
-    template
-        <button data-action="${action}">${escapeHtml (decoded label)}</button>
-    end
-end
-
-# ── A live text region bound to a server-push event ──────────────────
-function label
-    arg literal "label"
-    arg capture id    ident
-    arg literal "on"
-    arg capture event ident
-    template
-        <span id="${id}" data-event="${event}"></span>
-    end
+    append context.ui    {kind: "button", label: label, action: action}
+    append context.calls {name: action}       # remembered for the backend file
 end
 ```
 
-A **script** written in that language is what an author (or an agent)
-actually writes:
+**Argument directives**
 
+| Directive | Meaning |
+|---|---|
+| `arg literal "x"` | a fixed keyword the source must contain at this position |
+| `arg capture NAME TYPE` | a typed hole bound to `NAME` |
+| `arg capture NAME TYPE default "v"` | optional trailing arg with a default |
+| `block_closer end` | the function wraps a nested body, closed by `end` |
+| `block_verbatim end` | body captured as **raw bytes** (embedded code, SQL, shaders) — indentation/blank lines/comments preserved |
+
+**Capture types:** `string`, `int`, `bool`, `ident`, `dotted_ident`, `word`,
+`tail` (rest-of-line). (`string` values arrive quoted — use `${decoded …}` /
+`unquote` to strip the quotes; see helpers below.)
+
+**Body verbs (the inner DSL):** `set`, `append`, `prepend`, `if`/`else`, `for`,
+`while`, `write`, `error`, `return`. These run at parse time as each statement
+matches, building up `context`.
+
+### 3.3 Output blocks — rendering
+
+A `file "path"` block (or a single `file_template`) renders text. Inside it you
+`write` backtick literals with `${ … }` interpolation, and loop/branch over the
+`context` you accumulated:
+
+```capy
+file "static/index.html"
+    write `<!doctype html>
+<title>${escapeHtml context.title}</title>
+<main id="app">
+`
+    for n in context.ui
+        if n.kind == "button"
+            write `  <button data-action="${n.action}">${escapeHtml n.label}</button>
+`
+        end
+    end
+    write `</main>`
+end
 ```
-# counter.app — written in YOUR language, not HTML/JS/Python
-window "Counter" 360 240
-    label count on tick
+
+Whitespace inside backtick literals is significant (the formatter never touches
+it). `if`/`for` blocks are closed by `end`.
+
+**Template helpers** (use inside `${ … }`):
+
+| Group | Helpers |
+|---|---|
+| Strings | `decoded`, `unquote`, `unescape`, `escapeHtml`, `toQuoted`, `trim`, `trimPrefix`, `trimSuffix`, `lower`, `indent`, `align`, `join`, `len` |
+| Case | `camelCase`, `pascalCase`, `snakeCase`, `dasherize` |
+| Data | `toJSON`, `toJSONIndent`, `toPyLit`, `asString` |
+| Arithmetic | `add`, `sub`, `mul`, `div`, `mod`, `percent` |
+
+Helpers compose with parentheses, and `file` paths can themselves be templated:
+
+```capy
+file "components/${dasherize (unquote context.name)}.tsx"
+    write `export const ${pascalCase (unquote context.name)} = () => …`
+end
+```
+
+A complete, runnable example of all of this is
+[`assets/window.capy`](../assets/window.capy) (UI → HTML + JS + YAML) and the
+samples in the [Capy repo](https://github.com/olivierdevelops/capy/tree/main/samples).
+
+---
+
+<a name="multi-file"></a>
+
+## 4. One source → many files
+
+The payoff is **multi-file output**: a library declares several `file "path"`
+blocks and `RunMulti` emits all of them from one script in a single pass,
+returning `(primary, map[path]contents, err)`.
+
+A script in your language:
+
+```capy
+# counter.window — written in YOUR language, not HTML/JS/Python
+app "Counter" 360 240
+    text count
     button "Increment" calls add
     button "Decrement" calls sub
 end
 ```
 
-Run it through Capy and the `window … end` block expands to a complete
-`index.html`, with each `button`/`label` stamped consistently. The author
-never touched a `<div>`, a `BACKEND.call`, or an `@app.handle`. The
-vocabulary they *can* type is exactly the vocabulary your library defines
-— everything else is a parse error (see [§5](#contract)).
-
-Key library primitives you'll use (full list in Capy's docs):
-
-| Directive | Purpose |
-|-----------|---------|
-| `arg literal "x"` | a fixed keyword the source must contain |
-| `arg capture name TYPE` | a typed hole: `string`, `ident`, `int`, `bool`, `tail`, … |
-| `… default "v"` | optional trailing arg with a default |
-| `block_closer end` | the function wraps a nested body, closed by `end` |
-| `block_verbatim end` | body captured as **raw bytes** (for embedded code) |
-| `template … end` | multi-line output (sugar for a backtick `write`) |
-| `${body}` `${line}` `${depth}` | render locals injected by the engine |
-| `${escapeHtml …}` `${decoded …}` `${pascalCase …}` | template helpers |
-
----
-
-<a name="one-source-many-files"></a>
-
-## 4. One source → frontend + backend + config
-
-The real payoff is **multi-file output**. A Capy library can declare
-several output files and emit all of them from one script in a single
-pass. In the Go API this is `lib.RunMulti(script)`, which returns the
-primary output plus a `map[string]string` of every additional file.
-
-Conceptually, one `counter.app` source fans out to:
+…fans out (in `window`'s case) to a complete frontend + config:
 
 ```
-counter.app  ──capy──▶  static/index.html      (the UI)
-                        static/app.js           (BACKEND.call wiring)
-                        main.py                 (@app.handle stubs)
-                        window.yaml             (run_backend_script: python3 main.py)
+counter.window ──capy──▶ static/index.html   (the UI)
+                         static/app.js        (event wiring / BACKEND.call)
+                         window.yaml          (entry_path, size, native_features)
 ```
 
-Within the library, the same `button "Increment" calls add` statement
-contributes to **three** files at once:
+Because all three derive from the single token `add` in the source, the DOM
+`data-action`, the JS call key, and the handler name are **guaranteed
+identical**. Rename it in the source and all three move together — the frontend
+and backend aren't *connected*, they're *projected from the same sentence*.
 
-- to `index.html`: `<button data-action="add">Increment</button>`
-- to `app.js`: a click listener that fires `BACKEND.call("add", payload, render)`
-- to `main.py`: an `@app.handle("add")` stub with the right signature
-
-Because all three come from the single token `add` in the source, the
-JS call key, the Python handler name, and the DOM `data-action` are
-**guaranteed identical**. Rename it in the source and all three move
-together. That is the "one language for UI and backend" thesis made
-concrete: the frontend and backend aren't *connected*, they're *projected
-from the same sentence*.
-
-A sketch of the generated `app.js` contribution (what your `button`
-function's JS-target template emits):
-
-```js
-document.querySelectorAll('[data-action]').forEach(b =>
-  b.addEventListener('click', () =>
-    BACKEND.call(b.dataset.action, {}, ({ data }) => render(data))));
-
-BACKEND.onEvent("tick", d =>
-  document.querySelectorAll('[data-event="tick"]')
-          .forEach(el => el.textContent = d.value));
-```
-
-…and the generated `main.py` contribution:
-
-```python
-@app.handle("add")
-async def add(req, rw):
-    await rw.send({"value": req.get("value", 0) + 1})   # ← author fills the body
-```
-
-Capy generates the *boundary* — the handler registration, the call site,
-the event subscription, the `window.yaml` glue — which is the error-prone
-part. Business logic lives in clearly marked body slots the author
-completes.
+Scripts can also do light **metaprogramming**: a `define NAME … end` block at
+the top of a script is extracted and merged into the library before evaluation,
+so a script can add a one-off function to its own language. `RunMulti` honors
+this exactly as the CLI does. See
+[`docs/metaprogramming.md`](https://github.com/olivierdevelops/capy/blob/main/docs/metaprogramming.md).
 
 ---
 
 <a name="contract"></a>
 
-## 5. Enforcing the call/handler contract in the grammar
+## 5. Grammar-as-contract: validation & errors
 
-The deepest benefit isn't code volume saved — it's that **the parser is
-the contract**. In Capy there is no built-in grammar, so the *only* valid
-source is what your `.capy` library accepts. That has two consequences
-for webview_gui:
+Because Capy has **no built-in grammar**, the *only* valid source is what your
+library accepts — **the parser is the contract**:
 
-1. **No orphan calls.** `button "x" calls frobnicate` only type-checks if
-   you also declared a backend action `frobnicate` in the same source (a
-   library can validate cross-references using its inner DSL — `set`,
-   `if`, `error`, `regex_match`). A call with no handler becomes a
+1. **No orphan references.** `button "x" calls frobnicate` can be made to
+   type-check only if `frobnicate` was also declared in the same source — a
+   library validates cross-references with its inner DSL (`set`, `if`, `error`)
+   and raises a parse-time `error` otherwise. A call with no handler is a
    *compile error*, not a silent dead button.
 
-2. **Shape agreement.** If your `action` declaration names its payload
-   fields, the same field list is stamped into the JS `BACKEND.call`
-   payload and the Python handler's expected `req` keys. The
-   `{"value": …}` mismatch from [§1](#the-wiring-problem) is unrepresentable.
+2. **Shape agreement.** If an `action`'s payload fields are named in the source,
+   the same field list is stamped into both the JS call payload and the
+   backend handler's expected keys. Shape mismatches become unrepresentable.
 
-Capy already ships the machinery for this: typed captures, optional/named
-args, library-defined types (including group types like `[label](url)`),
-and load-time validation that reports a clear error (with `${line}`/`${col}`
-source positions) when a source violates the grammar. You're not building
-a type checker — you're declaring rules the engine enforces.
-
----
-
-<a name="run-modes"></a>
-
-## 6. Targeting every run mode from one DSL
-
-`webview_gui` has six run modes (server, url, proxy, browser, controlled,
-wasm). Capy is target-agnostic, so the *same* app source can emit
-different backends by swapping which output-file templates the library
-uses — the UI source never changes:
-
-| Target backend | Capy emits | webview_gui `mode` |
-|----------------|-----------|--------------------|
-| **Python subprocess** | `main.py` + `run_backend_script` | `""` (server) |
-| **WASM module** | a TinyGo `main.go` with `alloc`/`handle` exports, built to `app.wasm` | `wasm` |
-| **Native-only** | `app.js` calling `NATIVE.fs/os/dialogs/canvas`, `native_features:` list | `""` (no backend) |
-| **Controlled** | `controller.py` driving `create_window`/`navigate`/`eval`/`close` | `controlled` |
-
-For the **WASM** path, Capy's `block_verbatim` (raw-byte capture) is
-exactly right for emitting the Go `handle()` switch: each declared action
-becomes a `case "add":` arm, and the module contract
-(`alloc(size i32) i32`, `handle(...) i64`, packed `ptr<<32|len` return)
-is boilerplate the library stamps once — the author only writes the per-
-action logic. One source, swap a flag, get a zero-dependency WASM app
-instead of a Python one, with the *same* frontend.
-
-For **native features**, the library can derive the `native_features:`
-list automatically: if any statement in the source uses a `read_file` or
-`exec` verb, the generated `window.yaml` includes `fs` / `os`
-respectively. The capability surface is inferred from usage instead of
-hand-maintained.
+Errors carry source positions. From Go, a failed `Run`/`RunMulti` returns an
+`error` whose message includes line/column; on the CLI, `capy check` reports the
+same. You're not writing a type checker — you declare rules and the engine
+enforces them. See
+[`docs/grammar-as-contract.md`](https://github.com/olivierdevelops/capy/blob/main/docs/grammar-as-contract.md).
 
 ---
 
-<a name="interesting"></a>
+<a name="introspect"></a>
 
-## 7. Other interesting things Capy unlocks
+## 6. Introspection, docs & editor/agent integration
 
-Beyond the core "one language" story, Capy's design enables several
-patterns that are awkward today:
+A library is self-describing, so you never hand-maintain a parallel catalogue of
+"what verbs exist":
 
-- **Progressive abstraction.** The same library can expose both a
-  high-level verb (`form login`) and the low-level primitives it expands
-  to (`button`, `field`, `label`). Authors pick their altitude; power
-  users drop down without leaving the language.
+```go
+for _, fn := range lib.Introspect() { // []capy.FunctionInfo
+	// fn.Name, fn.Description, fn.Block (none/closer/verbatim), fn.Priority
+	for _, a := range fn.Args {        // []capy.ArgInfo
+		// a.Literal ("button") OR a.Capture ("label") + a.Type ("string") + a.Default
+	}
+}
 
-- **Component libraries as `.capy` files.** A design system (cards,
-  modals, tab strips) is a Capy library. Ship `corp-ui.capy`; every app
-  built on it renders consistent HTML/CSS and the matching JS behavior.
-  Update the library, regenerate, every app inherits the fix.
+names := lib.FunctionNames()          // []string, sorted
+markers := lib.CommentMarkers()       // []string, for a syntax highlighter
+md := capy.RenderLibraryDocs(lib)     // Markdown reference for YOUR language
+```
 
-- **Multilingual / themable output.** Because the source is abstract,
-  the same `counter.app` can render an English UI or a French one, a
-  light theme or dark, just by selecting a different render context — no
-  source duplication. (Capy's render locals and helpers like
-  `${decoded}` make i18n-by-context natural.)
+This is exactly what an editor needs for autocomplete / hover / highlighting,
+and what an agent reads to *learn your language at runtime* instead of you
+pasting a grammar into a prompt. `capy docs <lib>` writes the same Markdown
+`RenderLibraryDocs` returns.
 
-- **Embedded code blocks, untouched.** `block_verbatim` captures a body
-  byte-for-byte — blank lines, `#` comments, indentation preserved — so
-  you can embed a literal SQL query, a shader, or a Python snippet inside
-  your app source and have it land in the output verbatim. No escaping
-  gymnastics.
+---
 
-- **Host capabilities at generation time.** A Capy library can read
-  `env`, CLI `args`, or `read_file` *during generation* (via the host
-  interface) — e.g. bake the app version or a feature flag into the
-  generated `window.yaml`. In sandboxed contexts (an agent, the
-  playground) you swap in a `NoOpHost` so generation can touch nothing.
+<a name="hosts"></a>
 
-- **Auto-generated docs.** `RenderLibraryDocs(lib)` produces reference
-  docs for *your* app language directly from the `.capy` file — so the
-  vocabulary your team (or an agent) may use is always documented and in
-  sync.
+## 7. Host capabilities & sandboxing
+
+A library's inner DSL can read the outside world during generation — `env`, CLI
+`arg`s, `read_file` — to bake a version string or feature flag into the output.
+That access is mediated by a `Host`:
+
+```go
+import (
+	"github.com/olivierdevelops/capy"
+	capyinfra "github.com/olivierdevelops/capy/infra"
+)
+
+lib, _ := capy.NewLibrary(src)
+// Default after NewLibrary is domain.NoOpHost: env/arg return zero values and
+// read_file errors out — generation cannot touch anything. Safe for untrusted
+// (e.g. AI-generated) source.
+
+lib.SetHost(capyinfra.OSHost{}) // opt IN to real os.Getenv / os.Args / os.ReadFile
+//                                  — only when the library source is trusted.
+```
+
+`window`'s `GenerateCapyApp` keeps the default `NoOpHost`, so running a
+generated app from arbitrary source can't read your environment or files. Flip
+to `OSHost` only for first-party libraries you control. See
+[`docs/host-capabilities.md`](https://github.com/olivierdevelops/capy/blob/main/docs/host-capabilities.md).
+
+---
+
+<a name="cli"></a>
+
+## 8. CLI & tooling (v0.20.0)
+
+You don't have to embed Capy to use it — the `capy` binary covers the whole
+dev loop, and a library can ship as its own CLI:
+
+| Command | What it does |
+|---|---|
+| `capy run <lib.capy> <script>` | transpile a script through a library (legacy invocation) |
+| `capy <lib> <command> [args…]` | **library command dispatch** — libraries declare commands and run as their own CLI ("libraries as CLIs") |
+| `capy check <lib> <script>` | parse + validate; structured errors with positions (CI gate) |
+| `capy docs <lib>` | render Markdown reference docs for the library's language |
+| `capy fmt <files…>` | conservative formatter (`--check` / `--diff` / `--stdout`); never touches backtick-literal internals |
+| `capy watch <lib> [args…]` | re-run on any change to the library dir or file-path args (250ms poll) |
+| `capy lib add <git-url\|path> [--as name]` | install a library onto `CAPY_LIBS`; `capy lib remove <name>` to delete |
+| `capy build <lib> [-o out]` | compile a **standalone binary** with the library baked in — runs with no Capy install on the target (cross-compile via `GOOS`/`GOARCH`) |
+
+Beyond the CLI, Capy ships an **MCP server** (`cmd/capy-mcp`) so an agent can
+introspect/validate/render over MCP, and an **in-browser WASM** build
+(`cmd/capy-wasm`) so the *same* compiler runs in a webview for live preview —
+"preview" and "build" can't diverge. See
+[`docs/cli.md`](https://github.com/olivierdevelops/capy/blob/main/docs/cli.md),
+[`docs/library-commands.md`](https://github.com/olivierdevelops/capy/blob/main/docs/library-commands.md),
+[`docs/mcp.md`](https://github.com/olivierdevelops/capy/blob/main/docs/mcp.md).
+
+---
+
+<a name="window"></a>
+
+## 9. `window` specifics: formats, run modes, `--capy`
+
+`window` already embeds Capy for three of its authoring formats — each is a
+`.capy` library compiled by `GenerateCapyApp`:
+
+| You write | Library | Compiles to |
+|---|---|---|
+| `.window` | [`assets/window.capy`](../assets/window.capy) | `static/` + `window.yaml` (in-process Go backend) |
+| `.htmlx` | [`assets/htmlx.capy`](../assets/htmlx.capy) | a normalized HTML document |
+| `.cs` (CapyScript) | [`assets/capyscript.capy`](../assets/capyscript.capy) | JavaScript |
+
+(The fourth format, `.capyx`, is compiled by `window`'s own `infra/capyx*.go`,
+not by Capy — see [authoring-formats.md](./authoring-formats.md).)
+
+Run any of them by extension:
+
+```sh
+window app.window     # transpiled by window.capy
+window app.htmlx      # transpiled by htmlx.capy
+window app.cs         # transpiled by capyscript.capy
+```
+
+Because Capy is target-agnostic, one app source can emit different backends by
+swapping which `file` blocks the library renders, while the UI source stays the
+same — Python subprocess (`main.py` + `run_backend_script`), a zero-dependency
+WASM module (TinyGo `main.go` via `block_verbatim`, built to `app.wasm`,
+`mode: wasm`), native-only (`NATIVE.*` + `native_features:`), or controlled
+mode. The capability surface can even be **inferred from usage** — if a
+statement uses a `read_file`/`exec` verb, the generated `window.yaml` adds the
+matching `native_features:` entry.
 
 ---
 
 <a name="ai-agents"></a>
 
-## 8. AI agents that build apps
+## 10. AI agents that build apps
 
-This is where the combination is strongest. The goal: a user says
-"build me a habit tracker," an AI agent produces a working native app,
-and `webview_gui` runs it. Capy is the safe, compact interface between
-the model and the machine.
+This is where the combination is strongest. Instead of asking a model to emit
+`index.html` + `app.js` + `main.py` + `window.yaml` directly (~800–1500 tokens,
+four files that drift, arbitrary code you must execute), the agent emits **your
+app language**:
 
-### Why a DSL beats raw codegen
-
-If you ask a model to emit `index.html` + `app.js` + `main.py` +
-`window.yaml` directly, three things go wrong: it's ~800–1500 tokens of
-output (slow, expensive), the four files drift out of sync (the model
-forgets a handler), and you must execute whatever it produced (an
-arbitrary-code risk).
-
-Instead, the agent emits the **Capy source** — your app language:
-
-```
-window "Habit Tracker" 480 640
-    list habits on habits_changed
+```capy
+app "Habit Tracker" 480 640
+    list habits
     button "Add habit" calls add_habit
-    button "Reset week"  calls reset
+    button "Reset week" calls reset
 end
 ```
 
-That's ~40 tokens. Your library expands it to the full multi-file app.
-Measured on real libraries this is a **5–10× token reduction** on the
-generation step, and the *expansion* is deterministic Go code you wrote
-— not model output.
+That's ~40 tokens; your library deterministically expands it into the full
+multi-file app — a **5–10× token reduction** on the generation step, and the
+expansion is Go code you wrote, not model output.
 
-### Parser-as-grammar = a sandbox
+**Parser-as-sandbox.** Anything the agent emits that isn't in your grammar is
+rejected at parse time, before any renderer runs and before any file is written.
+The model literally cannot emit a `<script>` tag or a `subprocess.run` — those
+tokens aren't in the grammar. Combined with the default `NoOpHost`
+([§7](#hosts)), codegen is fully sandboxed.
 
-Because Capy has zero default grammar, **anything the agent emits that
-isn't in your library is rejected at parse time**, before any renderer
-runs and before any file is written. The model literally cannot emit a
-`<script>` tag, a `subprocess.run`, or an arbitrary import — those tokens
-aren't in the grammar. The blast radius of a hallucination is "parse
-error," not "shell command executed." Pair this with `NoOpHost` during
-generation and the codegen step is fully sandboxed.
-
-### MCP: hand the agent the tools, not the syntax
-
-Capy ships an MCP server (`cmd/capy-mcp`) and supports MCP widgets. An
-agent connected over MCP can:
-
-- call **introspection** (`lib.Introspect()`) to discover every function,
-  its args, types, and docstrings — so it learns your app language at
-  runtime instead of you pasting a grammar into the prompt;
-- **validate** a candidate source (`capy check`) and get structured
-  errors with `${line}`/`${col}` positions to self-correct;
-- **render** the source to the multi-file app (`lib.RunMulti`).
-
-A typical agent loop:
+A typical agent loop (all of it available over MCP, [§8](#cli)):
 
 ```
-1. introspect app.capy          → "here are the verbs you may use"
-2. draft counter.app            → ~40 tokens of DSL
-3. capy check counter.app       → parse error? feed it back, retry
-4. lib.RunMulti(counter.app)    → static/ + main.py + window.yaml
-5. window window.yaml           → the user sees their app
+1. lib.Introspect()            → "here are the verbs you may use"
+2. draft counter.window        → ~40 tokens of DSL
+3. capy check                  → parse error? feed it back, retry
+4. lib.RunMulti(source)        → static/ + window.yaml (deterministic, sandboxed)
+5. window window.yaml          → the user sees their app
 ```
 
-Steps 3–4 are deterministic and sandboxed; only step 2 is the model. The
-agent's creative latitude is bounded to *what your grammar allows* — which
-is exactly the safety property you want when generated code opens a native
-window on a user's machine.
-
-### Hot reload while iterating
-
-Capy compiles in-browser via WASM (`cmd/capy-wasm`). You can embed that
-in a `webview_gui` dev window so an author — or an agent in a chat panel
-— edits app source and sees the regenerated app live, with no rebuild.
-The same compiler that runs server-side runs in the webview, so
-"preview" and "build" can't diverge.
+Only step 2 is the model; steps 3–4 are deterministic and sandboxed. See
+[`docs/ai-agents.md`](https://github.com/olivierdevelops/capy/blob/main/docs/ai-agents.md).
 
 ---
 
-<a name="embedding"></a>
+<a name="versioning"></a>
 
-## 9. Embedding the Capy compiler in `window`
+## 11. Versioning & compatibility
 
-When you're ready to go beyond a build step, the embedded path is small
-and respects VHCO. The Capy Go API is pure Go:
-
-```go
-// infra/capy_codegen.go  (infra may import third-party, no domain logic)
-package infra
-
-import "github.com/olivierdevelops/capy" // pure Go, no CGo
-
-// GenerateApp turns one .capy source into a set of output files
-// (path → contents), ready to write next to a window.yaml.
-func GenerateApp(libPath, scriptSrc string) (map[string]string, error) {
-    lib, err := capy.NewLibraryFromFile(libPath)
-    if err != nil {
-        return nil, err
-    }
-    // Sandbox generation: no env/file/exec access during codegen.
-    // lib.SetHost(capy.NoOpHost{})   // if/when you accept untrusted source
-    primary, others, err := lib.RunMulti(scriptSrc)
-    if err != nil {
-        return nil, err
-    }
-    out := map[string]string{lib.OutputFile(): primary}
-    for path, contents := range others {
-        out[path] = contents
-    }
-    return out, nil
-}
-```
-
-Then an `appio` flag wires it into the CLI you already have:
-
-```go
-// appio/cli.go — add a --capy mode
-//   window --capy app.capy counter.app   → generate, then run window.yaml
-```
-
-This obeys the layer rules: `infra` owns the Capy dependency and file I/O,
-`appio` orchestrates the flag, `orchestrator`/`features`/`domain` are
-untouched. The generated `window.yaml` flows through your existing
-`appio/config_loader.go` exactly as a hand-written one would.
-
-For an **agent-driven** build, expose the same `GenerateApp` over your
-backend socket or MCP so a `BACKEND.call("build_app", {source})` returns
-the rendered files (or writes them and navigates the window to the result).
+- **Pinned version:** `github.com/olivierdevelops/capy v0.20.0` in
+  [`go.mod`](../go.mod). A local `replace` points at a Capy checkout for
+  development; remove/adjust it when consuming the tagged release.
+- **Pre-1.0 caveat:** the `.capy` library schema may break between *minor*
+  versions. Library directives (`function`, `arg`, `context`, `file`, helpers)
+  are stable within a minor; when bumping, re-run `capy check` on your libraries
+  and skim the [CHANGELOG](https://github.com/olivierdevelops/capy/blob/main/CHANGELOG.md).
+- **Migrating libraries:** [`docs/migration-guide.md`](https://github.com/olivierdevelops/capy/blob/main/docs/migration-guide.md)
+  tracks breaking syntax changes between versions.
+- **No CGo:** Capy is pure Go; it co-exists with `window`'s `webview_go` (CGo)
+  and `wazero` (pure Go) deps without changing the build matrix.
 
 ---
 
 <a name="rollout"></a>
 
-## 10. Suggested rollout
+## 12. Suggested rollout
 
-A low-risk path that delivers value at every step:
+A low-risk path that delivers value at each step:
 
-1. **Pilot library, build step only.** Write `app.capy` covering the
-   `counter` demo's vocabulary. Generate its four files with a `go run`
-   step. Diff against the hand-written demo until they match. No `window`
-   changes yet.
-2. **Add the contract checks.** Make orphan `calls` / shape mismatches a
-   compile error. This is the first thing that catches a real bug the
-   current setup can't.
-3. **Second backend target.** Emit the WASM `main.go` from the *same*
-   source; prove one app source produces both a Python and a WASM build
-   by flag.
-4. **Embed (`window --capy`).** Add `infra/capy_codegen.go` + the flag
-   ([§9](#embedding)) so generation is one command.
-5. **Agent surface.** Stand up the MCP server, expose introspection +
-   check + render, and let an agent author apps end-to-end with
-   `NoOpHost` sandboxing.
+1. **Pilot library, build step only.** Write a `.capy` covering one demo's
+   vocabulary; generate its files with a `go run` step and diff against the
+   hand-written version. No host code changes.
+2. **Add contract checks.** Make orphan references / shape mismatches a parse
+   `error` — the first thing that catches a bug the current setup can't.
+3. **Second output target.** Emit a different backend (e.g. WASM `main.go`) from
+   the *same* source to prove one source → many builds.
+4. **Embed.** Add an `infra/` codegen helper ([§2](#embed)) + a CLI flag, so
+   generation is one command.
+5. **Agent surface.** Stand up the MCP server, expose introspect + check +
+   render, and let an agent author end-to-end with `NoOpHost` sandboxing.
 
-Each step is independently shippable, and at no point does the existing
-`webview_gui` runtime — the socket protocol, `BACKEND`/`NATIVE`, the run
-modes — have to change. Capy only ever authors the files; `window` runs
-them.
+Each step is independently shippable, and the host runtime never has to change —
+Capy only ever authors the files.
 
 ---
 
 ### One-paragraph summary
 
-`webview_gui` runs apps assembled from a frontend, a backend, and a
-config that no compiler checks against each other. Capy lets you declare
-the whole app once in a small language *you* define, then projects that
-single source into all three artifacts — with the call/handler contract
-enforced by the grammar instead of by convention. The same source can
-target a Python, WASM, native, or controlled backend by a flag. And
-because Capy has zero default grammar, it's the ideal interface for AI
-agents: they emit a few dozen tokens of your app language, the library
-deterministically expands it into a working native app, and anything
-outside the grammar is rejected before a file is ever written.
+Capy is a pure-Go transpiler engine with no built-in grammar: you define a small
+language in a `.capy` library (`extension` + `comments` + `context` header,
+`function`/`arg`/`capture` grammar, `file "…"` output blocks with `${ … }`
+helpers), compile it with `capy.NewLibrary`, and project one source script into
+one or many output files with `lib.RunMulti`. The parser *is* the contract, so
+invalid input fails before a file is written; libraries are self-describing
+(`Introspect`, `RenderLibraryDocs`) for editors and agents; generation is
+sandboxed by default (`NoOpHost`); and the v0.20.0 CLI (`run`, `check`, `docs`,
+`fmt`, `watch`, `lib`, `build`) plus MCP/WASM cover authoring, validation, and
+shipping. `window` embeds it today for its `.window`, `.htmlx`, and `.cs`
+formats — and any Go application can embed it the same way.
