@@ -1,0 +1,54 @@
+app "Packing List" 460x540
+
+component checklist
+  <div class="card col">
+    <h1>Packing list</h1>
+    <div class="row">
+      <input class="new" placeholder="add an item" bind:value={draft} />
+      <button class="pill" on:click={add}>add</button>
+    </div>
+    <p class="muted">{{ items.filter(x => x.packed).length }} / {{ items.length }} packed</p>
+    {#if items.length > 0 && items.every(x => x.packed)}
+      <p class="done">All packed — you're ready to go!</p>
+    {/if}
+    <ul>
+      {#for item in items}
+        <li class="row" class:is-packed={item.packed}>
+          <button class="chk" on:click={toggle}>{{ item.packed ? "☑" : "☐" }}</button>
+          <span class="grow">{{ item.text }}</span>
+          <button class="rm" on:click={remove}>✕</button>
+        </li>
+      {#else}
+        <li class="muted">Nothing yet — add something to pack.</li>
+      {/for}
+    </ul>
+  </div>
+  <style>
+    .grow{flex:1}
+    .chk,.rm{border:none;background:none;cursor:pointer;font-size:16px}
+    .is-packed .grow{text-decoration:line-through;color:#9a9aab}
+    .done{margin:0;padding:8px 12px;border-radius:8px;background:#e6f7ec;color:#1b7a3d}
+  </style>
+end
+
+handler checklist
+  state items = []
+  state draft = ""
+  state nextId = 1
+  on add()
+    if draft.trim() == ""
+      return
+    end
+    items.push({id: nextId, text: draft.trim(), packed: false})
+    nextId = nextId + 1
+    draft = ""
+  end
+  on toggle(item)
+    item.packed = !item.packed
+  end
+  on remove(item)
+    items = items.filter(x => x.id !== item.id)
+  end
+end
+
+mount checklist

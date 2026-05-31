@@ -1,0 +1,40 @@
+app "Sign Up" 460x520
+
+component signup_form
+  <div class="card col">
+    <h1>Create account</h1>
+    <label class="col">Email
+      <input class="email" placeholder="you@example.com" bind:value={email} />
+    </label>
+    {#if email.length > 0 && !email.includes("@")}
+      <p class="bad">Email must contain "@".</p>
+    {/if}
+    <label class="col">Password
+      <input class="pass" type="password" bind:value={pass} />
+    </label>
+    {#if pass.length > 0 && pass.length < 6}
+      <p class="bad">Password must be at least 6 characters.</p>
+    {/if}
+    <label class="col">Confirm password
+      <input class="confirm" type="password" bind:value={confirm} />
+    </label>
+    {#if confirm.length > 0 && confirm !== pass}
+      <p class="bad">Passwords don't match.</p>
+    {/if}
+    {#if email.includes("@") && pass.length >= 6 && confirm.length > 0 && confirm === pass}
+      <p class="ok">Looks good — ready to submit!</p>
+    {/if}
+  </div>
+  <style>
+    .ok{margin:0;padding:8px 12px;border-radius:8px;background:#e6f7ec;color:#1b7a3d}
+    .bad{margin:0;color:#b3261e;font-size:13px}
+  </style>
+end
+
+handler signup_form
+  state email = ""
+  state pass = ""
+  state confirm = ""
+end
+
+mount signup_form

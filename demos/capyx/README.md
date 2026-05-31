@@ -21,7 +21,7 @@ exercised for real reactivity by [`generate_test.go`](./generate_test.go):
 go test ./demos/capyx/
 ```
 
-## The 25 demos, small → large
+## The 37 demos, small → large
 
 | # | Demo | Concepts |
 |---|------|----------|
@@ -51,6 +51,33 @@ go test ./demos/capyx/
 | 24 | `orchestrator` | **orchestrator** as injectable capability; shared store across two panels |
 | 25 | `control` | reactive `{#for}` nav, `{#if}` toggle, `{#match}` tabs + role cards — the runtime twin of `demos/htmlx/control.htmlx` |
 
+### Reactive showcase (input-driven, each with a `.capytest`)
+
+These twelve demonstrate components reacting live to user input. Every one ships
+a matching `<name>.capytest` suite that drives the real signals runtime
+headlessly:
+
+| # | Demo | Category | Concepts |
+|---|------|----------|----------|
+| 26 | `live_preview` | writing text | `bind:value` textarea → live preview + counts, `{#if}/{#else}` |
+| 27 | `username_picker` | writing text | live slug + nested `{#if}` availability check |
+| 28 | `text_transformer` | writing text | one input → many derived `{{ }}` transforms |
+| 29 | `checklist` | todo app | add/toggle/remove, `{#for}…{#else}`, completion banner, `class:` |
+| 30 | `tag_input` | todo app | add + de-dupe + remove tags, reactive count |
+| 31 | `product_tabs` | tabs | `{#match}` panels with `class:active` |
+| 32 | `setup_wizard` | tabs / steps | multi-step next/back, conditional summary |
+| 33 | `password_strength` | conditional | nested `{#if}` tiers + reactive meter width |
+| 34 | `signup_form` | conditional | live inline validation as you type |
+| 35 | `shipping_options` | conditional | `<select>` + toggle drive `{#match}` / `{#if}` |
+| 36 | `search_filter` | conditional | live `{#for}`+`{#if}` filter with empty state |
+| 37 | `bmi_check` | conditional | number inputs → computed value + nested `{#if}` |
+
+Run any suite headlessly:
+
+```sh
+window test demos/capyx/checklist.capytest
+```
+
 ## What the tests prove
 
 - **`TestCompileAll`** — all 25 compile and mount to non-empty DOM.
@@ -60,3 +87,7 @@ go test ./demos/capyx/
 - **`TestSharedOrchestrator`** — one click in panel A updates **both** panels'
   shared count (`0,0` → `1,1`), proving the orchestrator is a single reactive
   store injected into two handlers.
+- **`TestAllCapyTestSuites`** — every `*.capytest` suite in this folder (the
+  input-driven showcase plus `counter`/`notes`) parses, compiles in harness
+  mode, and passes under the Node DOM shim — proving the demos truly react to
+  typing, selecting, toggling and clicking.

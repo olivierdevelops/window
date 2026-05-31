@@ -118,7 +118,7 @@
       process required.</p>
     <div class="cta">
       <a class="btn primary" href="#tour">See it →</a>
-      <a class="btn ghost" href="#demos">Browse 25 demos</a>
+      <a class="btn ghost" href="#demos">Browse 37 demos</a>
       <a class="btn ghost" href="#testing">Test without a browser →</a>
     </div>
   </div>
@@ -359,7 +359,7 @@ mount panel use right</code></pre></div>
 
   <!-- DEMOS -->
   <section id="demos">
-    <div class="eyebrow">see it run · 25 demos, small → large</div>
+    <div class="eyebrow">see it run · 37 demos, small → large</div>
     <h2>Demos</h2>
     <p class="lead-p">Every demo below lives in
       <a href="https://github.com/olivierdevelops/window/tree/main/demos/capyx">demos/capyx/</a> and is
@@ -657,6 +657,157 @@ end
 mount panel use left
 mount panel use right</code></pre></div>
         <span class="run">window demos/capyx/orchestrator.capyx</span>
+      </div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:34px">reactive showcase · driven by user input</div>
+    <h2>Reacting to input</h2>
+    <p class="lead-p">Twelve focused demos that show components reacting <strong>live</strong> to what the
+      user types, selects, toggles and clicks — covering writing text, todo apps, tabs and conditional
+      rendering. Each ships a matching <code>.capytest</code> that drives the real signals runtime headlessly:
+      <code>window test demos/capyx/&lt;name&gt;.capytest</code>.</p>
+
+    <div class="demos">
+      <div class="demo">
+        <div class="dh"><b>live_preview</b><p>Type in a textarea, see a live preview and char/word/line counts.</p>
+          <span class="tag">writing text</span><span class="tag">bind:value</span></div>
+        <div class="code"><div class="cap">live_preview.capyx</div>
+<pre><code>&lt;textarea bind:value={text}&gt;&lt;/textarea&gt;
+&lt;span&gt;{{ text.length }} chars&lt;/span&gt;
+{#if text.trim()}
+  &lt;div class="preview"&gt;{{ text }}&lt;/div&gt;
+{/if}</code></pre></div>
+        <span class="run">window demos/capyx/live_preview.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>username_picker</b><p>Live URL slug plus a nested availability check as you type.</p>
+          <span class="tag">writing text</span><span class="tag">nested {#if}</span></div>
+        <div class="code"><div class="cap">username_picker.capyx</div>
+<pre><code>&lt;input bind:value={name} /&gt;
+{#if taken.includes(name.trim().toLowerCase())}
+  &lt;p&gt;"{{ name.trim() }}" is taken.&lt;/p&gt;
+{#else}
+  &lt;p&gt;"{{ name.trim() }}" is available!&lt;/p&gt;
+{/if}</code></pre></div>
+        <span class="run">window demos/capyx/username_picker.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>text_transformer</b><p>One input feeds many derived bindings at once.</p>
+          <span class="tag">writing text</span><span class="tag">derived</span></div>
+        <div class="code"><div class="cap">text_transformer.capyx</div>
+<pre><code>&lt;input bind:value={text} /&gt;
+&lt;td&gt;{{ text.toUpperCase() }}&lt;/td&gt;
+&lt;td&gt;{{ text.split("").reverse().join("") }}&lt;/td&gt;
+&lt;td&gt;{{ text.length }}&lt;/td&gt;</code></pre></div>
+        <span class="run">window demos/capyx/text_transformer.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>checklist</b><p>Add, check and remove items; a banner appears when all are packed.</p>
+          <span class="tag">todo app</span><span class="tag">{#for}/{#else}</span></div>
+        <div class="code"><div class="cap">checklist.capyx</div>
+<pre><code>{#for item in items}
+  &lt;button on:click={toggle}&gt;{{ item.packed ? "☑" : "☐" }}&lt;/button&gt;
+  &lt;span&gt;{{ item.text }}&lt;/span&gt;
+{#else}
+  &lt;li&gt;nothing yet&lt;/li&gt;
+{/for}</code></pre></div>
+        <span class="run">window demos/capyx/checklist.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>tag_input</b><p>Type and add tags; duplicates are ignored and the count updates.</p>
+          <span class="tag">todo app</span><span class="tag">de-dupe</span></div>
+        <div class="code"><div class="cap">tag_input.capyx</div>
+<pre><code>&lt;input bind:value={draft} /&gt;
+&lt;button on:click={add}&gt;add&lt;/button&gt;
+{#for tag in tags}
+  &lt;span&gt;{{ tag }}&lt;/span&gt;
+{/for}</code></pre></div>
+        <span class="run">window demos/capyx/tag_input.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>product_tabs</b><p>Tab buttons switch panels with an active highlight.</p>
+          <span class="tag">tabs</span><span class="tag">{#match}</span></div>
+        <div class="code"><div class="cap">product_tabs.capyx</div>
+<pre><code>{#match tab}
+  {#case "Specs"}   &lt;ul&gt;…&lt;/ul&gt;
+  {#case "Reviews"} &lt;p&gt;★★★★☆&lt;/p&gt;
+  {#default}        &lt;p&gt;Overview&lt;/p&gt;
+{/match}</code></pre></div>
+        <span class="run">window demos/capyx/product_tabs.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>setup_wizard</b><p>Multi-step next/back flow that summarises earlier input.</p>
+          <span class="tag">tabs / steps</span><span class="tag">conditional</span></div>
+        <div class="code"><div class="cap">setup_wizard.capyx</div>
+<pre><code>{#if step == 2}
+  &lt;input bind:value={email} /&gt;
+{/if}
+&lt;button on:click={next}&gt;Next&lt;/button&gt;</code></pre></div>
+        <span class="run">window demos/capyx/setup_wizard.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>password_strength</b><p>Nested conditions tier the strength as the field grows.</p>
+          <span class="tag">conditional</span><span class="tag">meter</span></div>
+        <div class="code"><div class="cap">password_strength.capyx</div>
+<pre><code>{#if pw.length &lt; 6}
+  &lt;p&gt;Weak&lt;/p&gt;
+{#else}
+  {#if pw.length &lt; 10} Fair {#else} Strong {/if}
+{/if}</code></pre></div>
+        <span class="run">window demos/capyx/password_strength.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>signup_form</b><p>Inline validation messages appear and clear as you type.</p>
+          <span class="tag">conditional</span><span class="tag">validation</span></div>
+        <div class="code"><div class="cap">signup_form.capyx</div>
+<pre><code>{#if pass.length &gt; 0 &amp;&amp; pass.length &lt; 6}
+  &lt;p&gt;Password must be at least 6.&lt;/p&gt;
+{/if}</code></pre></div>
+        <span class="run">window demos/capyx/signup_form.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>shipping_options</b><p>A select and a toggle drive what the page renders.</p>
+          <span class="tag">conditional</span><span class="tag">&lt;select&gt;</span></div>
+        <div class="code"><div class="cap">shipping_options.capyx</div>
+<pre><code>&lt;select bind:value={country}&gt;…&lt;/select&gt;
+{#match country}
+  {#case "CA"} Cross-border: $12
+  {#default}   International: $25
+{/match}</code></pre></div>
+        <span class="run">window demos/capyx/shipping_options.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>search_filter</b><p>Live filter a list as you type, with an empty state.</p>
+          <span class="tag">conditional</span><span class="tag">{#for}+{#if}</span></div>
+        <div class="code"><div class="cap">search_filter.capyx</div>
+<pre><code>&lt;input bind:value={query} /&gt;
+{#for lang in langs}
+  {#if lang.toLowerCase().includes(query.toLowerCase())}
+    &lt;li&gt;{{ lang }}&lt;/li&gt;
+  {/if}
+{/for}</code></pre></div>
+        <span class="run">window demos/capyx/search_filter.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>bmi_check</b><p>Number inputs compute a value and pick a category.</p>
+          <span class="tag">conditional</span><span class="tag">number</span></div>
+        <div class="code"><div class="cap">bmi_check.capyx</div>
+<pre><code>&lt;input type="number" bind:value={weight} /&gt;
+{#if weight &gt; 0 &amp;&amp; height &gt; 0}
+  &lt;p&gt;BMI {{ (weight/((height/100)*(height/100))).toFixed(1) }}&lt;/p&gt;
+{/if}</code></pre></div>
+        <span class="run">window demos/capyx/bmi_check.capyx</span>
       </div>
     </div>
   </section>

@@ -159,7 +159,7 @@ Format reference: [`docs/authoring-formats.md`](./authoring-formats.md). Public 
 
 ---
 
-## `capyx/*` — Reactive VHCO apps (24 demos)
+## `capyx/*` — Reactive VHCO apps (36 demos)
 
 **Format:** `.capyx` · **Backend:** none (fine-grained signals runtime)
 
@@ -177,6 +177,27 @@ They progress small → large: `hello`, `greeter`, `toggle`, `counter`,
 `two_lists`, `notes`, `orchestrator`. The last three demonstrate VHCO
 dependency injection: mounting one component twice, `capability`/`provide`, and
 an `orchestrator` shared reactive store.
+
+### Reactive showcase (input-driven)
+
+Twelve focused demos that show components reacting live to user input. Each
+ships a matching `.capytest` that drives the real signals runtime headlessly
+(`window test demos/capyx/<name>.capytest`):
+
+| Demo | Shows | Reactive features |
+| --- | --- | --- |
+| `live_preview` | Writing text | `bind:value` textarea → live preview + char/word/line counts, `{#if}/{#else}` empty state |
+| `username_picker` | Writing text | live slug from input, nested `{#if}` availability check |
+| `text_transformer` | Writing text | one input → many live `{{ }}` transforms (upper/lower/reverse/length) |
+| `checklist` | Todo app | add / toggle / remove, `{#for}…{#else}`, "all packed" banner, `class:` strike-through |
+| `tag_input` | Todo app | add + de-dupe tags, remove, reactive count |
+| `product_tabs` | Tabs | `{#match}` panel switching with `class:active` |
+| `setup_wizard` | Tabs / steps | multi-step next/back, conditional summary from earlier input |
+| `password_strength` | Conditional on input | nested `{#if}` strength tiers + reactive meter width |
+| `signup_form` | Conditional on input | live inline validation messages as you type |
+| `shipping_options` | Conditional on input | `<select>` + toggle drive `{#match}` / `{#if}` rendering |
+| `search_filter` | Conditional on input | live `{#for}`+`{#if}` filtering with empty state |
+| `bmi_check` | Conditional on input | number inputs → computed value + nested `{#if}` category |
 
 Full catalogue: [`demos/capyx/README.md`](../demos/capyx/README.md). Format
 reference: [`docs/capyx-reactive-vhco.md`](./capyx-reactive-vhco.md). Tested by

@@ -1,0 +1,22 @@
+suite "Username availability reacts to input"
+use ./username_picker.capyx
+
+scenario "prompts when empty"
+    mount username_picker
+    expect text "check availability"
+
+scenario "rejects too-short names"
+    mount username_picker
+    input .uname "ab"
+    expect text "Too short"
+
+scenario "rejects taken names"
+    mount username_picker
+    input .uname "Admin"
+    expect text "is taken"
+
+scenario "accepts an available name and slugifies it"
+    mount username_picker
+    input .uname "Jane Doe"
+    expect text "is available"
+    expect text "@jane-doe"

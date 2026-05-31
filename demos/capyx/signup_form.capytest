@@ -1,0 +1,20 @@
+suite "Signup form live validation"
+use ./signup_form.capyx
+
+scenario "shows and clears the email error"
+    mount signup_form
+    input .email "bademail"
+    expect text "must contain"
+    input .email "me@example.com"
+    expect no text "must contain"
+
+scenario "validates password and confirmation, then enables submit"
+    mount signup_form
+    input .email "me@example.com"
+    input .pass "abc"
+    expect text "at least 6"
+    input .pass "secret1"
+    input .confirm "nope"
+    expect text "don't match"
+    input .confirm "secret1"
+    expect text "ready to submit"

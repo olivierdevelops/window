@@ -1,0 +1,15 @@
+suite "Live preview reacts to typing"
+use ./live_preview.capyx
+
+scenario "empty shows a placeholder"
+    mount live_preview
+    expect text "live preview shows up here"
+    expect text "0 chars"
+
+scenario "typing fills the preview and updates counts"
+    mount live_preview
+    input .src "Hello reactive world"
+    expect text "Hello reactive world"
+    expect text "20 chars"
+    expect text "3 words"
+    expect no text "shows up here"

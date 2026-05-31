@@ -1,0 +1,42 @@
+app "Checkout" 460x420
+
+component shipping_options
+  <div class="card col">
+    <h1>Checkout</h1>
+    <label class="col">Country
+      <select class="country" bind:value={country}>
+        <option value="US">United States</option>
+        <option value="CA">Canada</option>
+        <option value="Other">Other</option>
+      </select>
+    </label>
+    {#match country}
+      {#case "US"}
+        <p>Domestic shipping: $5</p>
+      {#case "CA"}
+        <p>Cross-border shipping: $12</p>
+      {#default}
+        <p>International shipping: $25</p>
+    {/match}
+    <button class="pill" on:click={toggle}>{{ express ? "Express: on (+$10)" : "Express: off" }}</button>
+    {#if express}
+      <p class="ok">Arrives in 1–2 business days.</p>
+    {#else}
+      <p class="muted">Standard delivery (5–7 business days).</p>
+    {/if}
+  </div>
+  <style>
+    select{width:100%}
+    .ok{margin:0;color:#1b7a3d;font-weight:600}
+  </style>
+end
+
+handler shipping_options
+  state country = "US"
+  state express = false
+  on toggle()
+    express = !express
+  end
+end
+
+mount shipping_options

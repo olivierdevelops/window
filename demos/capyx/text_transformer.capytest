@@ -1,0 +1,10 @@
+suite "Text transforms update live"
+use ./text_transformer.capyx
+
+scenario "transforms reflect the input"
+    mount text_transformer
+    input .src "Capy"
+    expect text "CAPY"
+    expect text "capy"
+    expect text "ypaC"
+    expect text "4"

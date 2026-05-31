@@ -1,0 +1,14 @@
+suite "Product tabs switch panels"
+use ./product_tabs.capyx
+
+scenario "default tab and switching"
+    mount product_tabs
+    expect text "feather light"
+    click "Specs"
+    expect text "Bluetooth 5.3"
+    expect no text "feather light"
+    click "Reviews"
+    expect text "Crisp sound"
+    expect no text "Bluetooth 5.3"
+    click "Overview"
+    expect text "feather light"

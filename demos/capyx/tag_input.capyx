@@ -1,0 +1,44 @@
+app "Tags" 460x360
+
+component tag_input
+  <div class="card col">
+    <h1>Tags</h1>
+    <div class="row">
+      <input class="tagbox" placeholder="add a tag" bind:value={draft} />
+      <button class="pill" on:click={add}>add</button>
+    </div>
+    <p class="muted">{{ tags.length }} tag{{ tags.length === 1 ? "" : "s" }}</p>
+    <div class="row">
+      {#for tag in tags}
+        <span class="tag">{{ tag }}<button class="x" on:click={remove}>×</button></span>
+      {#else}
+        <span class="muted">No tags yet.</span>
+      {/for}
+    </div>
+  </div>
+  <style>
+    .tag{display:inline-flex;align-items:center;gap:6px;background:#eef;color:#5a5ad8;border-radius:999px;padding:4px 10px;font-size:13px}
+    .x{border:none;background:none;color:#5a5ad8;cursor:pointer;font-size:15px;line-height:1}
+  </style>
+end
+
+handler tag_input
+  state tags = []
+  state draft = ""
+  on add()
+    if draft.trim() == ""
+      return
+    end
+    if tags.includes(draft.trim().toLowerCase())
+      draft = ""
+      return
+    end
+    tags.push(draft.trim().toLowerCase())
+    draft = ""
+  end
+  on remove(tag)
+    tags = tags.filter(x => x !== tag)
+  end
+end
+
+mount tag_input

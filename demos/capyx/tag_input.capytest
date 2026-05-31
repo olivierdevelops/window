@@ -1,0 +1,29 @@
+suite "Tag input reactivity"
+use ./tag_input.capyx
+
+scenario "starts with no tags"
+    mount tag_input
+    expect text "0 tags"
+    expect text "No tags yet"
+
+scenario "adds, dedupes and counts tags"
+    mount tag_input
+    input .tagbox "Go"
+    click "add"
+    expect text "1 tag"
+    input .tagbox "go"
+    click "add"
+    expect text "1 tag"
+    input .tagbox "Rust"
+    click "add"
+    expect text "2 tags"
+
+scenario "removes a tag"
+    mount tag_input
+    input .tagbox "Go"
+    click "add"
+    input .tagbox "Rust"
+    click "add"
+    expect text "2 tags"
+    click "×"
+    expect text "1 tag"

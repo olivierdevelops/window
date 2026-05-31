@@ -1,0 +1,19 @@
+suite "BMI computes and classifies from input"
+use ./bmi_check.capyx
+
+scenario "prompts until both fields are entered"
+    mount bmi_check
+    expect text "Enter weight and height"
+    input .wt "70"
+    expect text "Enter weight and height"
+
+scenario "computes BMI and category"
+    mount bmi_check
+    input .wt "70"
+    input .ht "175"
+    expect text "22.9"
+    expect text "Healthy weight"
+    input .wt "120"
+    expect text "Obese"
+    input .wt "45"
+    expect text "Underweight"

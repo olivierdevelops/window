@@ -1,0 +1,29 @@
+app "Live Preview" 520x480
+
+component live_preview
+  <div class="card col">
+    <h1>Live Preview</h1>
+    <textarea class="src" rows="6" placeholder="start typing…" bind:value={text}></textarea>
+    <div class="row">
+      <span class="chip">{{ text.length }} chars</span>
+      <span class="chip">{{ text.trim() === "" ? 0 : text.trim().split(" ").filter(w => w.length > 0).length }} words</span>
+      <span class="chip">{{ text === "" ? 0 : text.split("\n").length }} lines</span>
+    </div>
+    {#if text.trim()}
+      <div class="preview">{{ text }}</div>
+    {#else}
+      <p class="muted">Your live preview shows up here as you type.</p>
+    {/if}
+  </div>
+  <style>
+    textarea{width:100%;resize:vertical}
+    .chip{background:#f0f0f7;border-radius:999px;padding:4px 12px;font-size:13px}
+    .preview{white-space:pre-wrap;background:#fafaff;border:1px solid #e6e6ef;border-radius:10px;padding:12px}
+  </style>
+end
+
+handler live_preview
+  state text = ""
+end
+
+mount live_preview

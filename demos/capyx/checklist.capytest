@@ -1,0 +1,32 @@
+suite "Packing checklist reactivity"
+use ./checklist.capyx
+
+scenario "starts empty"
+    mount checklist
+    expect count li 1
+    expect text "Nothing yet"
+    expect text "0 / 0 packed"
+
+scenario "add, check and complete"
+    mount checklist
+    input .new "Socks"
+    click "add"
+    input .new "Charger"
+    click "add"
+    expect count li 2
+    expect text "0 / 2 packed"
+    click "☐"
+    expect text "1 / 2 packed"
+    click "☐"
+    expect text "2 / 2 packed"
+    expect text "All packed"
+
+scenario "remove a task"
+    mount checklist
+    input .new "Socks"
+    click "add"
+    input .new "Charger"
+    click "add"
+    expect count li 2
+    click "✕"
+    expect count li 1

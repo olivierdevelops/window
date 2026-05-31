@@ -1,0 +1,13 @@
+suite "Search filters the list as you type"
+use ./search_filter.capyx
+
+scenario "filters and shows an empty state"
+    mount search_filter
+    expect count li 7
+    expect text "7 match"
+    input .q "ru"
+    expect count li 2
+    expect text "2 match"
+    input .q "zzz"
+    expect count li 0
+    expect text "No matches"

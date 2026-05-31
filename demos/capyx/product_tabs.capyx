@@ -1,0 +1,38 @@
+app "Product Tabs" 480x420
+
+component product_tabs
+  <div class="card col">
+    <h1>Capy Headphones</h1>
+    <div class="row tabs">
+      {#for t in names}
+        <button class="tab" class:active={tab == t} on:click={ tab = t }>{{ t }}</button>
+      {/for}
+    </div>
+    {#match tab}
+      {#case "Overview"}
+        <p>Wireless over-ear headphones — 40-hour battery, feather light.</p>
+      {#case "Specs"}
+        <ul class="specs">
+          <li>Bluetooth 5.3</li>
+          <li>40mm drivers</li>
+          <li>USB-C fast charge</li>
+        </ul>
+      {#case "Reviews"}
+        <p>★★★★☆ — "Crisp sound, comfy fit, great value."</p>
+      {#default}
+        <p class="muted">Pick a tab.</p>
+    {/match}
+  </div>
+  <style>
+    .tab{border:1px solid #d8d8e6;background:#fff;border-radius:8px;padding:7px 14px;cursor:pointer;font:inherit}
+    .tab.active{background:#7c7cff;color:#fff;border-color:#7c7cff}
+    .specs li{padding:4px 0}
+  </style>
+end
+
+handler product_tabs
+  state tab = "Overview"
+  state names = ["Overview", "Specs", "Reviews"]
+end
+
+mount product_tabs

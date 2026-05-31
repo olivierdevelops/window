@@ -1,0 +1,43 @@
+app "BMI Check" 460x420
+
+component bmi_check
+  <div class="card col">
+    <h1>BMI Check</h1>
+    <label class="col">Weight (kg)
+      <input class="wt" type="number" placeholder="70" bind:value={weight} />
+    </label>
+    <label class="col">Height (cm)
+      <input class="ht" type="number" placeholder="175" bind:value={height} />
+    </label>
+    {#if weight > 0 && height > 0}
+      <p>BMI: <strong>{{ (weight / ((height / 100) * (height / 100))).toFixed(1) }}</strong></p>
+      {#if (weight / ((height / 100) * (height / 100))) < 18.5}
+        <p class="warn">Underweight</p>
+      {#else}
+        {#if (weight / ((height / 100) * (height / 100))) < 25}
+          <p class="ok">Healthy weight</p>
+        {#else}
+          {#if (weight / ((height / 100) * (height / 100))) < 30}
+            <p class="warn">Overweight</p>
+          {#else}
+            <p class="bad">Obese</p>
+          {/if}
+        {/if}
+      {/if}
+    {#else}
+      <p class="muted">Enter weight and height to compute BMI.</p>
+    {/if}
+  </div>
+  <style>
+    .ok{margin:0;color:#1b7a3d;font-weight:600}
+    .warn{margin:0;color:#a06a00;font-weight:600}
+    .bad{margin:0;color:#b3261e;font-weight:600}
+  </style>
+end
+
+handler bmi_check
+  state weight = 0
+  state height = 0
+end
+
+mount bmi_check

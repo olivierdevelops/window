@@ -214,6 +214,72 @@ console.log("ONE:"+strongs().join(","));
 	}
 }
 
+// TestAllCapyTestSuites runs every *.capytest suite in this folder through the
+// headless runner (compile in harness mode → drive under the Node DOM shim) and
+// asserts all scenarios pass. This covers the input-driven reactive showcase
+// (typing, selecting, toggling, clicking) without a browser.
+func TestAllCapyTestSuites(t *testing.T) {
+	if _, err := exec.LookPath("node"); err != nil {
+		t.Skip("node not on PATH; headless .capytest runner needs it")
+	}
+	rt := runtimeJS(t)
+	tk := readAsset(t, "capyx_testkit.js")
+	shim := readAsset(t, "capyx_dom_shim.js")
+
+	suites, _ := filepath.Glob("*.capytest")
+	if len(suites) == 0 {
+		t.Fatal("no .capytest suites found")
+	}
+	for _, sp := range suites {
+		sp := sp
+		t.Run(sp, func(t *testing.T) {
+			src, err := os.ReadFile(sp)
+			if err != nil {
+				t.Fatalf("read %s: %v", sp, err)
+			}
+			suite, err := infra.ParseCapyTest(string(src))
+			if err != nil {
+				t.Fatalf("parse %s: %v", sp, err)
+			}
+			capyxPath := suite.Use
+			if !filepath.IsAbs(capyxPath) {
+				capyxPath = filepath.Join(filepath.Dir(sp), capyxPath)
+			}
+			capyxSrc, err := os.ReadFile(capyxPath)
+			if err != nil {
+				t.Fatalf("read app under test %s: %v", capyxPath, err)
+			}
+			res, err := infra.RunCapyTest(suite, string(capyxSrc), rt, tk, shim)
+			if err != nil {
+				t.Fatalf("run %s: %v", sp, err)
+			}
+			if res.Failed != 0 {
+				for _, sc := range res.Results {
+					if sc.Ok {
+						continue
+					}
+					t.Errorf("scenario %q failed (error=%q):", sc.Name, sc.Error)
+					for _, st := range sc.Steps {
+						if !st.Ok {
+							t.Errorf("    step %q: %s", st.Op, st.Message)
+						}
+					}
+				}
+				t.Fatalf("%s: %d/%d scenarios failed", sp, res.Failed, res.Passed+res.Failed)
+			}
+		})
+	}
+}
+
+func readAsset(t *testing.T, name string) string {
+	t.Helper()
+	b, err := os.ReadFile(filepath.Join("..", "..", "assets", name))
+	if err != nil {
+		t.Fatalf("read asset %s: %v", name, err)
+	}
+	return string(b)
+}
+
 func lineValue(out, prefix string) string {
 	for _, ln := range strings.Split(out, "\n") {
 		if strings.HasPrefix(ln, prefix) {

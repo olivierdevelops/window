@@ -1,0 +1,29 @@
+app "Search Filter" 460x460
+
+component search_filter
+  <div class="card col">
+    <h1>Find a language</h1>
+    <input class="q" placeholder="search…" bind:value={query} />
+    <p class="muted">{{ langs.filter(l => l.toLowerCase().includes(query.trim().toLowerCase())).length }} match</p>
+    <ul>
+      {#for lang in langs}
+        {#if lang.toLowerCase().includes(query.trim().toLowerCase())}
+          <li>{{ lang }}</li>
+        {/if}
+      {/for}
+    </ul>
+    {#if langs.filter(l => l.toLowerCase().includes(query.trim().toLowerCase())).length === 0}
+      <p class="muted">No matches for "{{ query }}".</p>
+    {/if}
+  </div>
+  <style>
+    li{padding:7px 10px;border-bottom:1px solid #eee}
+  </style>
+end
+
+handler search_filter
+  state query = ""
+  state langs = ["Go", "Rust", "Python", "Ruby", "JavaScript", "Gleam", "Zig"]
+end
+
+mount search_filter

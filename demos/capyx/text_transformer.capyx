@@ -1,0 +1,26 @@
+app "Transformer" 480x380
+
+component text_transformer
+  <div class="card col">
+    <h1>Text Transformer</h1>
+    <input class="src" placeholder="type something" bind:value={text} />
+    <table>
+      <tr><td class="k">UPPER</td><td>{{ text.toUpperCase() }}</td></tr>
+      <tr><td class="k">lower</td><td>{{ text.toLowerCase() }}</td></tr>
+      <tr><td class="k">Reversed</td><td>{{ text.split("").reverse().join("") }}</td></tr>
+      <tr><td class="k">Words</td><td>{{ text.trim() === "" ? 0 : text.trim().split(" ").filter(w => w.length > 0).length }}</td></tr>
+      <tr><td class="k">Length</td><td>{{ text.length }}</td></tr>
+    </table>
+  </div>
+  <style>
+    table{width:100%;border-collapse:collapse}
+    td{padding:8px 10px;border-bottom:1px solid #eee}
+    .k{color:#8b8b9e;width:96px;font-size:13px}
+  </style>
+end
+
+handler text_transformer
+  state text = ""
+end
+
+mount text_transformer

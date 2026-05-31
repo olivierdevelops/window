@@ -1,0 +1,21 @@
+suite "Setup wizard steps"
+use ./setup_wizard.capyx
+
+scenario "advances through steps and shows a summary"
+    mount setup_wizard
+    expect text "Step 1 of 3"
+    input .wname "Oliver"
+    click "Next"
+    expect text "Step 2 of 3"
+    input .wemail "oliver@example.com"
+    click "Next"
+    expect text "Step 3 of 3"
+    expect text "All set, Oliver"
+    expect text "oliver@example.com"
+
+scenario "back returns to a previous step"
+    mount setup_wizard
+    click "Next"
+    expect text "Step 2 of 3"
+    click "Back"
+    expect text "Step 1 of 3"

@@ -1,0 +1,44 @@
+app "Setup Wizard" 460x400
+
+component setup_wizard
+  <div class="card col">
+    <h1>Setup</h1>
+    <p class="muted">Step {{ step }} of 3</p>
+    {#if step == 1}
+      <label class="col">Your name
+        <input class="wname" placeholder="name" bind:value={name} />
+      </label>
+    {/if}
+    {#if step == 2}
+      <label class="col">Your email
+        <input class="wemail" placeholder="email" bind:value={email} />
+      </label>
+    {/if}
+    {#if step == 3}
+      <p>All set, <strong>{{ name }}</strong>!</p>
+      <p class="muted">We'll reach you at {{ email }}.</p>
+    {/if}
+    <div class="row">
+      {#if step > 1}
+        <button class="btn" on:click={back}>Back</button>
+      {/if}
+      {#if step < 3}
+        <button class="pill" on:click={next}>Next</button>
+      {/if}
+    </div>
+  </div>
+end
+
+handler setup_wizard
+  state step = 1
+  state name = ""
+  state email = ""
+  on next()
+    step = step + 1
+  end
+  on back()
+    step = step - 1
+  end
+end
+
+mount setup_wizard

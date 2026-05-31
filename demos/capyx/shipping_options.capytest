@@ -1,0 +1,19 @@
+suite "Shipping options react to choices"
+use ./shipping_options.capyx
+
+scenario "country selection changes shipping"
+    mount shipping_options
+    expect text "Domestic shipping"
+    input .country "CA"
+    fire change .country
+    expect text "Cross-border shipping"
+    input .country "Other"
+    fire change .country
+    expect text "International shipping"
+
+scenario "express toggle switches the delivery note"
+    mount shipping_options
+    expect text "Standard delivery"
+    click "Express: off"
+    expect text "Arrives in 1"
+    expect text "Express: on"
