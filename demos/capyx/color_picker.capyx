@@ -1,0 +1,30 @@
+app "Color Picker" 460x420
+
+component color_picker
+  <div class="card col">
+    <h1>Color Picker</h1>
+    <div class="swatch" style:background={ "rgb(" + r + "," + g + "," + b + ")" }></div>
+    <label class="col">Red {{ r }}
+      <input type="range" min="0" max="255" bind:value={r} />
+    </label>
+    <label class="col">Green {{ g }}
+      <input type="range" min="0" max="255" bind:value={g} />
+    </label>
+    <label class="col">Blue {{ b }}
+      <input type="range" min="0" max="255" bind:value={b} />
+    </label>
+    <code>rgb({{ r }}, {{ g }}, {{ b }})</code>
+  </div>
+  <style>
+    .swatch{height:90px;border-radius:12px;border:1px solid #ddd}
+    code{background:#f0f0f7;padding:6px 10px;border-radius:8px;font-family:ui-monospace,monospace}
+  </style>
+end
+
+handler color_picker
+  state r = 124
+  state g = 124
+  state b = 255
+end
+
+mount color_picker

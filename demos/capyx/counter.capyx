@@ -1,0 +1,35 @@
+app "Counter" 420x300
+
+component counter
+  <div class="card col">
+    <h1>Counter</h1>
+    <div class="row">
+      <button class="btn" on:click={dec}>-</button>
+      <span style="font-size:28px;min-width:48px;text-align:center">{{ count }}</span>
+      <button class="btn" on:click={inc}>+</button>
+    </div>
+    {#if count > 0}
+      <p class="muted">{{ count }} and climbing.</p>
+    {#elif count < 0}
+      <p class="muted">below zero.</p>
+    {#else}
+      <p class="muted">back to zero.</p>
+    {/if}
+    <button class="pill" on:click={reset}>reset</button>
+  </div>
+end
+
+handler counter
+  state count = 0
+  on inc()
+    count = count + 1
+  end
+  on dec()
+    count = count - 1
+  end
+  on reset()
+    count = 0
+  end
+end
+
+mount counter

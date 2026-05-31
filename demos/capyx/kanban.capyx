@@ -1,0 +1,56 @@
+app "Kanban" 720x520
+
+component kanban
+  <div class="board">
+    <div class="lane col">
+      <h3>To do</h3>
+      {#for card in cards.filter(x => x.col === 0)}
+        <div class="ticket row">
+          <span class="grow">{{ card.text }}</span>
+          <button class="btn" on:click={right}>→</button>
+        </div>
+      {/for}
+    </div>
+    <div class="lane col">
+      <h3>Doing</h3>
+      {#for card in cards.filter(x => x.col === 1)}
+        <div class="ticket row">
+          <button class="btn" on:click={left}>←</button>
+          <span class="grow">{{ card.text }}</span>
+          <button class="btn" on:click={right}>→</button>
+        </div>
+      {/for}
+    </div>
+    <div class="lane col">
+      <h3>Done</h3>
+      {#for card in cards.filter(x => x.col === 2)}
+        <div class="ticket row">
+          <button class="btn" on:click={left}>←</button>
+          <span class="grow">{{ card.text }}</span>
+        </div>
+      {/for}
+    </div>
+  </div>
+  <style>
+    .board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .lane{background:#f0f0f7;border-radius:12px;padding:12px;min-height:200px}
+    .ticket{background:#fff;border:1px solid #e6e6ef;border-radius:8px;padding:8px 10px}
+    .grow{flex:1}
+  </style>
+end
+
+handler kanban
+  state cards = [{id: 1, text: "Design", col: 0}, {id: 2, text: "Build", col: 0}, {id: 3, text: "Review", col: 1}, {id: 4, text: "Ship", col: 2}]
+  on right(card)
+    if card.col < 2
+      card.col = card.col + 1
+    end
+  end
+  on left(card)
+    if card.col > 0
+      card.col = card.col - 1
+    end
+  end
+end
+
+mount kanban

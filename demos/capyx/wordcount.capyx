@@ -1,0 +1,24 @@
+app "Word Count" 480x440
+
+component wordcount
+  <div class="card col">
+    <h1>Word Count</h1>
+    <textarea rows="8" placeholder="type or paste text…" bind:value={text}></textarea>
+    <div class="grid">
+      <div class="stat"><span class="num">{{ text.length }}</span><span class="muted">characters</span></div>
+      <div class="stat"><span class="num">{{ text.trim() === "" ? 0 : text.trim().split(/\s+/).length }}</span><span class="muted">words</span></div>
+      <div class="stat"><span class="num">{{ text === "" ? 0 : text.split("\n").length }}</span><span class="muted">lines</span></div>
+    </div>
+  </div>
+  <style>
+    textarea{width:100%;resize:vertical}
+    .stat{display:flex;flex-direction:column;align-items:center;background:#f0f0f7;border-radius:10px;padding:14px}
+    .num{font-size:28px;font-weight:700}
+  </style>
+end
+
+handler wordcount
+  state text = ""
+end
+
+mount wordcount

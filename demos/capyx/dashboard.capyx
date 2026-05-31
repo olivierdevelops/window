@@ -1,0 +1,38 @@
+app "Dashboard" 560x480
+
+component dashboard
+  <div class="card col">
+    <h1>Metrics</h1>
+    <p class="muted">Each bar is its own effect — bumping one never touches the others.</p>
+    {#for stat in stats}
+      <div class="metric col">
+        <div class="row">
+          <span class="grow">{{ stat.name }}</span>
+          <strong>{{ stat.value }}%</strong>
+          <button class="btn" on:click={bump}>+10</button>
+        </div>
+        <div class="bar">
+          <div class="fill" style:width={ stat.value + "%" } style:background={ stat.value > 80 ? "#e8590c" : "#7c7cff" }></div>
+        </div>
+      </div>
+    {/for}
+    <h3>Average: {{ (stats.reduce((s, x) => s + x.value, 0) / stats.length).toFixed(0) }}%</h3>
+  </div>
+  <style>
+    .grow{flex:1}
+    .bar{height:14px;background:#eee;border-radius:999px;overflow:hidden}
+    .fill{height:100%;border-radius:999px;transition:width .2s}
+  </style>
+end
+
+handler dashboard
+  state stats = [{id: 1, name: "CPU", value: 30}, {id: 2, name: "Memory", value: 55}, {id: 3, name: "Disk", value: 70}, {id: 4, name: "Network", value: 20}]
+  on bump(stat)
+    stat.value = stat.value + 10
+    if stat.value > 100
+      stat.value = 0
+    end
+  end
+end
+
+mount dashboard

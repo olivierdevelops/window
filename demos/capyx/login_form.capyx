@@ -1,0 +1,44 @@
+app "Login" 420x380
+
+component login_form
+  <div class="card col">
+    <h1>Sign in</h1>
+    <label class="col">Username
+      <input bind:value={user} />
+    </label>
+    <label class="col">Password
+      <input type="password" bind:value={pass} />
+    </label>
+    <button class="pill" on:click={submit}>Log in</button>
+    {#if msg}
+      <p class="note" class:ok={ok}>{{ msg }}</p>
+    {/if}
+  </div>
+  <style>
+    .note{margin:0;padding:10px;border-radius:8px;background:#fde;color:#a23}
+    .note.ok{background:#dfd;color:#2a6}
+  </style>
+end
+
+handler login_form
+  state user = ""
+  state pass = ""
+  state msg = ""
+  state ok = false
+  on submit()
+    if user.trim() == ""
+      msg = "Username is required."
+      ok = false
+      return
+    end
+    if pass.length < 4
+      msg = "Password must be at least 4 characters."
+      ok = false
+      return
+    end
+    msg = "Welcome back, " + user + "!"
+    ok = true
+  end
+end
+
+mount login_form

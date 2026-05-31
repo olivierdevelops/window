@@ -1,0 +1,56 @@
+app "Orchestrator" 480x420
+
+# An orchestrator owns shared data and is injectable as a capability named after
+# itself. Two panels mount the same component with different handlers; both
+# inject the orchestrator, so a click in one panel updates the shared count
+# everywhere — fine-grained, no whole-tree re-render.
+
+orchestrator hub
+  data
+    count = 0
+    log = []
+  end
+  on bump()
+    count = count + 1
+    log.push("bumped to " + count)
+  end
+  on boot()
+    log.push("hub ready")
+  end
+end
+
+component panel
+  <div class="card col">
+    <h2>{{ label }}</h2>
+    <p>shared count: <strong>{{ bus.count }}</strong></p>
+    <button class="pill" on:click={inc}>+1 from here</button>
+    <p class="muted">events: {{ bus.log.length }}</p>
+  </div>
+end
+
+handler left for panel
+  state label = "Panel A"
+  state bus = null
+  needs hub as hub
+  on mount()
+    bus = hub
+  end
+  on inc()
+    hub.bump()
+  end
+end
+
+handler right for panel
+  state label = "Panel B"
+  state bus = null
+  needs hub as hub
+  on mount()
+    bus = hub
+  end
+  on inc()
+    hub.bump()
+  end
+end
+
+mount panel use left
+mount panel use right

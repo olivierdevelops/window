@@ -1,0 +1,11 @@
+app "Hello" 420x300
+
+component hello
+  <div class="card col">
+    <h1>Hello, capyx</h1>
+    <p class="muted">A reactive desktop app in a single file.</p>
+    <span class="badge">no backend</span>
+  </div>
+end
+
+mount hello

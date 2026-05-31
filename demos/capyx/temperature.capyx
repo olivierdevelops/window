@@ -1,0 +1,26 @@
+app "Temperature" 440x320
+
+component temperature
+  <div class="card col">
+    <h1>Temperature</h1>
+    <div class="row">
+      <input type="number" bind:value={c} />
+      <span class="muted">°C</span>
+    </div>
+    <p>= <strong>{{ ((c * 9 / 5) + 32).toFixed(1) }}</strong> °F</p>
+    <p>= <strong>{{ (Number(c) + 273.15).toFixed(1) }}</strong> K</p>
+    {#if c > 30}
+      <span class="badge">hot</span>
+    {#elif c < 5}
+      <span class="badge">cold</span>
+    {#else}
+      <span class="badge">mild</span>
+    {/if}
+  </div>
+end
+
+handler temperature
+  state c = 20
+end
+
+mount temperature

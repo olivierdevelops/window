@@ -128,6 +128,31 @@ A static demo app.
 
 ---
 
+## `capyx/*` — Reactive VHCO apps (24 demos)
+
+**Format:** `.capyx` · **Backend:** none (fine-grained signals runtime)
+
+A whole catalogue of single-file **reactive** apps, run directly from a
+`.capyx` source:
+
+```bash
+window demos/capyx/counter.capyx
+```
+
+They progress small → large: `hello`, `greeter`, `toggle`, `counter`,
+`temperature`, `tip_calculator`, `color_picker`, `list_basic`, `star_rating`,
+`tabs`, `accordion`, `login_form`, `wordcount`, `theme_demo`, `stopwatch`,
+`todo`, `shopping_cart`, `quiz`, `kanban`, `calculator`, `dashboard`,
+`two_lists`, `notes`, `orchestrator`. The last three demonstrate VHCO
+dependency injection: mounting one component twice, `capability`/`provide`, and
+an `orchestrator` shared reactive store.
+
+Full catalogue: [`demos/capyx/README.md`](../demos/capyx/README.md). Format
+reference: [`docs/capyx-reactive-vhco.md`](./capyx-reactive-vhco.md). Tested by
+`go test ./demos/capyx/` (compile + mount + reactivity under a Node DOM shim).
+
+---
+
 ## Feature matrix
 
 | Demo | Mode | Backend | `native_features` | `js_inject` |

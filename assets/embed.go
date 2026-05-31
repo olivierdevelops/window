@@ -49,3 +49,6 @@ var HtmlxCapyLib []byte
 
 //go:embed capyscript.capy
 var CapyScriptLib []byte
+
+//go:embed capyx_runtime.js
+var CapyxRuntimeJS []byte

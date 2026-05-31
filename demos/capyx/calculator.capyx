@@ -1,0 +1,42 @@
+app "Calculator" 360x460
+
+component calculator
+  <div class="card col">
+    <div class="screen">{{ expr || "0" }}</div>
+    <div class="pad">
+      {#for key in keys}
+        <button class="key" on:click={press}>{{ key }}</button>
+      {/for}
+    </div>
+    <div class="row">
+      <button class="pill grow" on:click={clear}>clear</button>
+      <button class="pill grow" on:click={equals}>=</button>
+    </div>
+  </div>
+  <style>
+    .screen{font-size:32px;text-align:right;padding:14px;background:#1d1d29;color:#fff;border-radius:10px;font-variant-numeric:tabular-nums;overflow:hidden}
+    .pad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .key{padding:16px;font-size:18px;border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer}
+    .key:hover{background:#f0f0f7}
+    .grow{flex:1}
+  </style>
+end
+
+handler calculator
+  state expr = ""
+  state keys = ["7", "8", "9", "/", "4", "5", "6", "*", "1", "2", "3", "-", "0", ".", "(", ")", "+"]
+  on press(key)
+    expr = expr + key
+  end
+  on clear()
+    expr = ""
+  end
+  on equals()
+    if expr == ""
+      return
+    end
+    expr = String(eval(expr))
+  end
+end
+
+mount calculator

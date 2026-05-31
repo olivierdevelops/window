@@ -170,6 +170,7 @@
       <a href="#build">Build</a>
       <a href="#demos">Demos</a>
       <a href="window-lang.html">.window lang</a>
+      <a href="capyx.html">.capyx</a>
       <a href="htmlx.html">.htmlx</a>
       <a href="capyscript.html">.cs</a>
       <a href="#capabilities">Capabilities</a>
@@ -591,9 +592,14 @@ send calc math into result args { a: state.a, b: state.b, op: 'add' }</code></pr
       </div>
       <p style="margin-top:14px">
         <a class="btn primary" href="window-lang.html">Full .window reference &amp; all 34 demos →</a>
+        <a class="btn ghost" href="capyx.html" style="margin-left:8px">Want fine-grained reactivity? Write <code>.capyx</code> →</a>
         <a class="btn ghost" href="htmlx.html" style="margin-left:8px">Prefer raw HTML? Write <code>.htmlx</code> →</a>
         <a class="btn ghost" href="capyscript.html" style="margin-left:8px">Just need logic? Script in <code>.cs</code> →</a>
       </p>
+      <p class="hint" style="margin-top:8px">New: <a href="capyx.html"><code>.capyx</code></a> is a single-file
+        <b>reactive VHCO</b> format — dumb components, state handlers, capability/provide dependency
+        injection and an optional orchestrator, all compiled to a fine-grained <b>signals runtime</b>
+        that does surgical DOM updates. <a href="capyx.html">See all 24 <code>.capyx</code> demos →</a></p>
       <p class="hint" style="margin-top:8px">Or skip the widgets and author a page as matched-pair
         angle-bracket HTML — <code>&lt;tag&gt;…&lt;/tag&gt;</code>, nesting validated at transpile time.
         See the <a href="htmlx.html">.htmlx format</a>. Need plain algorithmic logic instead?

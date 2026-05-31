@@ -1,0 +1,19 @@
+app "Greeter" 420x280
+
+component greeter
+  <div class="card col">
+    <h1>Greeter</h1>
+    <input placeholder="your name" bind:value={name} />
+    {#if name}
+      <p>Hello, <strong>{{ name }}</strong>! Your name has {{ name.length }} letters.</p>
+    {#else}
+      <p class="muted">Type your name above.</p>
+    {/if}
+  </div>
+end
+
+handler greeter
+  state name = ""
+end
+
+mount greeter

@@ -1,0 +1,23 @@
+app "Tip Calculator" 440x360
+
+component tip_calculator
+  <div class="card col">
+    <h1>Tip Calculator</h1>
+    <label class="col">Bill
+      <input type="number" bind:value={bill} />
+    </label>
+    <label class="col">Tip %
+      <input type="number" bind:value={pct} />
+    </label>
+    <hr/>
+    <p>Tip: <strong>{{ (bill * pct / 100).toFixed(2) }}</strong></p>
+    <p>Total: <strong>{{ (Number(bill) + bill * pct / 100).toFixed(2) }}</strong></p>
+  </div>
+end
+
+handler tip_calculator
+  state bill = 50
+  state pct = 15
+end
+
+mount tip_calculator

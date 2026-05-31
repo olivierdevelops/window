@@ -1,0 +1,29 @@
+app "Star Rating" 420x300
+
+component star_rating
+  <div class="card col">
+    <h1>Rate it</h1>
+    <div class="row stars">
+      {#for n in slots}
+        <button class="star" on:click={ rating = n } on:mouseenter={ hover = n } on:mouseleave={ hover = 0 }>{{ n <= (hover || rating) ? "★" : "☆" }}</button>
+      {/for}
+    </div>
+    {#if rating > 0}
+      <p>You rated <strong>{{ rating }}</strong> out of 5.</p>
+    {#else}
+      <p class="muted">Click a star.</p>
+    {/if}
+  </div>
+  <style>
+    .star{border:none;background:none;font-size:34px;cursor:pointer;color:#f5a623;line-height:1}
+    .stars{gap:4px}
+  </style>
+end
+
+handler star_rating
+  state slots = [1, 2, 3, 4, 5]
+  state rating = 0
+  state hover = 0
+end
+
+mount star_rating

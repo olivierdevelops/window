@@ -1,0 +1,21 @@
+app "Theme" 440x360
+
+theme primary="#e8590c" radius="16px" muted="#9aa0b4"
+
+component theme_demo
+  <div class="card col">
+    <h1>Theme tokens</h1>
+    <p class="muted">Colors and radii come from <code>theme</code> tokens compiled to CSS variables.</p>
+    <div class="row">
+      <button class="pill">Primary</button>
+      <span class="badge">badge</span>
+    </div>
+    <div class="swatch"></div>
+  </div>
+  <style>
+    code{background:#f0f0f7;padding:1px 6px;border-radius:6px}
+    .swatch{height:70px;border-radius:{{ theme.radius }};background:{{ theme.primary }}}
+  </style>
+end
+
+mount theme_demo

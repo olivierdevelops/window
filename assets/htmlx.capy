@@ -47,33 +47,96 @@ function app
 <meta name="color-scheme" content="dark light" />
 <title>${escapeHtml title}</title>
 <style>
-  html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
-  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body { margin:0; padding:28px; line-height:1.6; background:#0d1117; color:#e6edf3;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,"Helvetica Neue",Arial,sans-serif;
+  /* ── Cross-OS normalization ──────────────────────────────────────────
+     WKWebView (macOS), WebView2/Chromium (Windows) and WebKitGTK (Linux)
+     ship different UA defaults, fonts, form controls and scrollbars. The
+     rules below pin metrics, kill per-OS faux styling and restyle native
+     widgets so a .htmlx app renders near-identically on every platform. */
+  :root {
+    color-scheme:dark;
+    accent-color:#7c7cff;          /* checkbox/radio/range tint, all OS */
+    --bg:#0d1117; --panel:#161b22; --sunken:#0a0d12; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --accent:#7c7cff;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Code","Cascadia Mono",
+      "JetBrains Mono","Fira Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  }
+  html { -webkit-text-size-adjust:100%; text-size-adjust:100%; font-size:16px;
+    line-height:1.6; -moz-tab-size:2; tab-size:2; text-rendering:optimizeLegibility;
+    /* identical scrollbar geometry on Firefox-based engines */
+    scrollbar-width:thin; scrollbar-color:#30363d transparent; }
+  *,*::before,*::after { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; padding:28px; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    /* pin weight/style synthesis so missing cuts look the same everywhere */
+    font-synthesis:none; font-variant-ligatures:none;
     -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
   main { max-width:680px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
-  h1 { font-size:1.7rem; margin:0; } h2 { font-size:1.2rem; margin:0; }
-  h3 { font-size:1rem; color:#8b949e; margin:0; }
-  p { margin:0; } a { color:#7c7cff; } .muted { color:#8b949e; }
-  p,pre,span,li { overflow-wrap:anywhere; word-break:break-word; }
-  .card { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:18px; }
+  h1,h2,h3,h4,p,figure,blockquote { margin:0; }
+  h1 { font-size:1.7rem; line-height:1.25; }
+  h2 { font-size:1.2rem; line-height:1.3; }
+  h3 { font-size:1rem; color:var(--muted); }
+  a { color:var(--accent); } .muted { color:var(--muted); }
+  p,pre,span,li,td,th { overflow-wrap:anywhere; word-break:break-word; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px; }
   .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   .grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); }
-  .btn,button { background:#7c7cff; color:#fff; border:none; border-radius:9px;
-    padding:10px 18px; font-size:14px; font-weight:600; cursor:pointer; text-decoration:none;
-    display:inline-block; -webkit-appearance:none; appearance:none; }
-  .btn:hover,button:hover { opacity:.9; }
-  input,textarea,select { font-family:inherit; -webkit-appearance:none; appearance:none;
-    background:#0a0d12; border:1px solid #30363d; color:#e6edf3; border-radius:8px;
-    padding:10px 12px; width:100%; }
+
+  /* ── Buttons: strip every UA chrome, restyle from zero ── */
+  .btn,button,input[type=button],input[type=submit],input[type=reset] {
+    background:var(--accent); color:#fff; border:none; border-radius:9px;
+    padding:10px 18px; font:inherit; font-size:14px; font-weight:600; line-height:1.2;
+    cursor:pointer; text-decoration:none; display:inline-block; text-align:center;
+    -webkit-appearance:none; appearance:none; }
+  .btn:hover,button:hover,input[type=submit]:hover { opacity:.9; }
+  button:disabled,.btn:disabled { opacity:.5; cursor:not-allowed; }
+
+  /* ── Text fields: one look across engines ── */
+  input,textarea,select { font:inherit; font-size:14px; line-height:1.4;
+    -webkit-appearance:none; -moz-appearance:none; appearance:none;
+    background:var(--sunken); border:1px solid var(--line); color:var(--fg);
+    border-radius:8px; padding:10px 12px; width:100%; }
+  textarea { resize:vertical; min-height:84px; }
+  ::placeholder { color:var(--muted); opacity:1; }   /* Firefox dims by default */
+  input:focus-visible,textarea:focus-visible,select:focus-visible,
+  button:focus-visible,.btn:focus-visible,a:focus-visible {
+    outline:2px solid var(--accent); outline-offset:2px; }
+  /* remove the number spinner + search clear/decoration that vary per OS */
+  input[type=number] { -moz-appearance:textfield; }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  input[type=search]::-webkit-search-decoration,
+  input[type=search]::-webkit-search-cancel-button { -webkit-appearance:none; }
+  input[type=checkbox],input[type=radio] { width:auto; accent-color:var(--accent); }
+  input[type=range] { width:100%; accent-color:var(--accent); }
+  /* custom dropdown arrow so <select> matches on macOS/Windows/Linux */
+  select { padding-right:34px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' fill='none' stroke='%238b949e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat; background-position:right 12px center; }
+
   ul { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px; }
-  ul li { background:#161b22; border:1px solid #30363d; border-radius:8px; padding:8px 12px; }
-  pre { background:#0a0d12; border:1px solid #30363d; border-radius:8px; padding:12px; overflow:auto; }
-  hr { border:none; border-top:1px solid #30363d; margin:6px 0; }
-  img,video,canvas { max-width:100%; border-radius:12px; }
+  ul li { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 12px; }
+  code,kbd,samp { font-family:var(--mono); font-size:.92em; }
+  pre { font-family:var(--mono); background:var(--sunken); border:1px solid var(--line);
+    border-radius:8px; padding:12px; overflow:auto; }
+  hr { border:none; border-top:1px solid var(--line); margin:6px 0; }
+  img,video,canvas { max-width:100%; border:0; border-radius:12px; }
+  img { height:auto; }
+  table { border-collapse:collapse; width:100%; }
   .badge { display:inline-block; background:#1f6feb33; color:#79c0ff; border-radius:999px;
     padding:2px 10px; font-size:12px; font-weight:600; }
+
+  /* ── Consistent scrollbars (WebKit/Chromium engines) ── */
+  ::-webkit-scrollbar { width:12px; height:12px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:#30363d; border-radius:8px;
+    border:3px solid transparent; background-clip:content-box; }
+  ::-webkit-scrollbar-thumb:hover { background:#484f58; background-clip:content-box; }
+  ::-webkit-scrollbar-corner { background:transparent; }
+
+  @media (prefers-reduced-motion:reduce) {
+    *,*::before,*::after { animation-duration:.001ms !important;
+      animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+  }
 </style></head>
 <body><main>
 ${body}

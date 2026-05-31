@@ -1,20 +1,25 @@
-# Authoring a window app: HTML, JS, and custom components
+# Authoring a window app: HTML, JS, custom components, and reactive apps
 
-`window` can build an app from three source formats, all transpiled by the
-[Capy](https://github.com/olivierdevelops/capy) engine into the same thing: a
-`window.yaml` + a `static/` frontend that the native webview runs.
+`window` can build an app from several source formats, all compiled into the
+same thing: a `window.yaml` + a `static/` frontend that the native webview runs.
 
 | You write | File | Compiles to | Best for |
 |---|---|---|---|
 | Matched-pair HTML | `.htmlx` | a full HTML document | static pages, full layout control |
 | A JS-like script | `.cs` | real JavaScript | algorithms, scratch logic |
 | Custom HTML tags | `.htmlx` + `define` | your own components | reusable UI pieces |
+| Reactive VHCO app | `.capyx` | HTML + signals runtime | stateful, fine-grained reactive UIs |
+
+The `.htmlx` / `.cs` formats are transpiled by the
+[Capy](https://github.com/olivierdevelops/capy) engine; `.capyx` is compiled by
+the project's own [`infra/capyx*.go`](../infra) into an inlined signals runtime.
 
 Run any of them the same way:
 
 ```sh
 window app.htmlx
 window app.cs
+window app.capyx
 ```
 
 ---
@@ -69,6 +74,30 @@ mismatch is a **transpile error**, not a silently broken page:
 
 Built-in utility classes ship with the wrapper: `.card`, `.row`, `.grid`,
 `.btn`, `.muted`, `.badge`.
+
+### Renders the same on every OS and engine
+
+The native webview is a different browser engine on each platform — WKWebView on
+macOS, WebView2/Chromium on Windows, WebKitGTK on Linux — and each ships its own
+UA defaults, system fonts, native form widgets and scrollbars. The `.htmlx`
+wrapper normalizes all of that so a page looks near-identical everywhere:
+
+- **Pinned metrics** — explicit `font-size`, `line-height`, `tab-size`,
+  `box-sizing:border-box`, and `font-synthesis:none` (so a missing bold/italic
+  cut is never faux-synthesized differently per OS).
+- **Form controls reset to zero** — `appearance:none` on buttons and fields, a
+  custom SVG `<select>` arrow, normalized number spinners / search decorations,
+  a consistent `::placeholder` color, and a single `:focus-visible` ring.
+- **Native widgets tinted** — `accent-color` gives checkboxes, radios and ranges
+  one color instead of the per-OS blue/green.
+- **Styled scrollbars** — identical thin scrollbars via `::-webkit-scrollbar`
+  plus `scrollbar-width`/`scrollbar-color`, replacing macOS overlay vs
+  Windows/Linux chunky bars.
+- **Consistent type** — a deep `monospace` stack for `<pre>`/`<code>`,
+  antialiased smoothing, and a `prefers-reduced-motion` guard.
+
+The reset lives in [`assets/htmlx.capy`](../assets/htmlx.capy) (the `app`
+function's document wrapper).
 
 ---
 
@@ -287,12 +316,48 @@ role with a nested `<for>` + `<switch>`.
 
 ---
 
+## Reactive apps — `.capyx`
+
+When a page needs **state and live updates** rather than static markup, reach
+for `.capyx`. It is a single-file **reactive VHCO** format: dumb `component`
+views, stateful `handler` units, `capability`/`provide` dependency injection,
+and an optional shared `orchestrator` — all compiled to a fine-grained
+**signals runtime** that performs surgical DOM updates (mutating one field
+re-runs only the effects that read it).
+
+```
+handler Counter {
+  state { count = 0 }
+  on inc { count = count + 1 }
+}
+
+component CounterView(H) {
+  <button { on:click = H.inc }>"+"</button>
+  <span>{{ H.count }}</span>
+}
+
+mount CounterView with Counter
+```
+
+`{{ expr }}` is a reactive text binding, `{ on:click = … }` wires events,
+`{#for}` / `{#if}` / `{#match}` are dynamic regions, and `{ bind:value = … }`
+is a two-way model. The full format — the three-brace rule, every top-level
+construct, the handler mini-language, capability/provide injection and the
+orchestrator shared store — is documented in
+[**`docs/capyx-reactive-vhco.md`**](./capyx-reactive-vhco.md), with 24 runnable
+demos in [`demos/capyx/`](../demos/capyx/).
+
+---
+
 ## Where things live
 
 | | |
 |---|---|
 | `.htmlx` grammar | [`assets/htmlx.capy`](../assets/htmlx.capy) |
 | CapyScript grammar | [`assets/capyscript.capy`](../assets/capyscript.capy) |
+| `.capyx` compiler | [`infra/capyx*.go`](../infra) |
+| `.capyx` runtime | [`assets/capyx_runtime.js`](../assets/capyx_runtime.js) |
 | HTML demos | [`demos/htmlx/`](../demos/htmlx/) |
 | CapyScript demos | [`demos/cs/`](../demos/cs/) |
+| `.capyx` demos | [`demos/capyx/`](../demos/capyx/) |
 | Transpiler engine | [Capy](https://github.com/olivierdevelops/capy) |

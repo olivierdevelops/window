@@ -1,0 +1,66 @@
+app "Two Lists" 480x520
+
+# Option-1 binding: one dumb component, mounted twice with two independent
+# handlers. Each handler owns its own state — the views never share data.
+
+component tasklist
+  <div class="card col">
+    <h2>{{ title }}</h2>
+    <div class="row">
+      <input placeholder="add" bind:value={draft} />
+      <button class="pill" on:click={add}>add</button>
+    </div>
+    <ul>
+      {#for item in items}
+        <li class="row">
+          <span class="grow">{{ item.text }}</span>
+          <button class="btn" on:click={remove}>✕</button>
+        </li>
+      {#else}
+        <li class="muted">empty</li>
+      {/for}
+    </ul>
+  </div>
+  <style>
+    .grow{flex:1}
+  </style>
+end
+
+handler today for tasklist
+  state title = "Today"
+  state items = [{id: 1, text: "Stretch"}]
+  state draft = ""
+  state nid = 2
+  on add()
+    if draft.trim() == ""
+      return
+    end
+    items.push({id: nid, text: draft.trim()})
+    nid = nid + 1
+    draft = ""
+  end
+  on remove(item)
+    items = items.filter(x => x.id !== item.id)
+  end
+end
+
+handler work for tasklist
+  state title = "Work"
+  state items = [{id: 1, text: "Ship release"}]
+  state draft = ""
+  state nid = 2
+  on add()
+    if draft.trim() == ""
+      return
+    end
+    items.push({id: nid, text: draft.trim()})
+    nid = nid + 1
+    draft = ""
+  end
+  on remove(item)
+    items = items.filter(x => x.id !== item.id)
+  end
+end
+
+mount tasklist use today
+mount tasklist use work

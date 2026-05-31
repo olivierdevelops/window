@@ -1,0 +1,24 @@
+app "Toggle" 380x280
+
+theme primary="#7c7cff"
+
+component toggle
+  <div class="card col">
+    <h1>Toggle</h1>
+    <button class="pill" on:click={flip}>{{ on ? "Turn off" : "Turn on" }}</button>
+    <div class="box" class:on={on}>{{ on ? "ON" : "OFF" }}</div>
+  </div>
+  <style>
+    .box{padding:28px;border-radius:12px;text-align:center;font-weight:600;background:#eee;color:#888;transition:.2s}
+    .box.on{background:{{ theme.primary }};color:#fff}
+  </style>
+end
+
+handler toggle
+  state on = false
+  on flip()
+    on = !on
+  end
+end
+
+mount toggle

@@ -1,0 +1,31 @@
+app "Tabs" 460x380
+
+component tabs
+  <div class="card col">
+    <h1>Tabs</h1>
+    <div class="row">
+      <button class="btn" class:active={tab == "home"} on:click={ tab = "home" }>Home</button>
+      <button class="btn" class:active={tab == "profile"} on:click={ tab = "profile" }>Profile</button>
+      <button class="btn" class:active={tab == "settings"} on:click={ tab = "settings" }>Settings</button>
+    </div>
+    {#match tab}
+      {#case "home"}
+        <p>Welcome to the home tab.</p>
+      {#case "profile"}
+        <p>This is your profile.</p>
+      {#case "settings"}
+        <p>Adjust your settings here.</p>
+      {#default}
+        <p class="muted">Pick a tab.</p>
+    {/match}
+  </div>
+  <style>
+    .active{background:#7c7cff;color:#fff;border-color:#7c7cff}
+  </style>
+end
+
+handler tabs
+  state tab = "home"
+end
+
+mount tabs

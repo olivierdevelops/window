@@ -1,0 +1,49 @@
+app "Shopping Cart" 520x520
+
+component shopping_cart
+  <div class="card col">
+    <h1>Shop</h1>
+    <div class="grid">
+      {#for p in products}
+        <div class="prod col">
+          <strong>{{ p.name }}</strong>
+          <span class="muted">${{ p.price }}</span>
+          <button class="pill" on:click={add}>add</button>
+        </div>
+      {/for}
+    </div>
+    <hr/>
+    <h2>Cart ({{ cart.length }})</h2>
+    <ul>
+      {#for line in cart}
+        <li class="row">
+          <span class="grow">{{ line.name }}</span>
+          <span>${{ line.price }}</span>
+          <button class="btn" on:click={drop}>✕</button>
+        </li>
+      {#else}
+        <li class="muted">cart is empty</li>
+      {/for}
+    </ul>
+    <h3>Total: ${{ cart.reduce((sum, x) => sum + x.price, 0) }}</h3>
+  </div>
+  <style>
+    .prod{border:1px solid #eee;border-radius:10px;padding:12px;text-align:center}
+    .grow{flex:1}
+  </style>
+end
+
+handler shopping_cart
+  state products = [{id: 1, name: "Coffee", price: 4}, {id: 2, name: "Bagel", price: 3}, {id: 3, name: "Juice", price: 5}, {id: 4, name: "Muffin", price: 4}]
+  state cart = []
+  state lineId = 1
+  on add(p)
+    cart.push({id: lineId, name: p.name, price: p.price})
+    lineId = lineId + 1
+  end
+  on drop(line)
+    cart = cart.filter(x => x.id !== line.id)
+  end
+end
+
+mount shopping_cart

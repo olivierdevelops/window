@@ -1,0 +1,43 @@
+app "Stopwatch" 420x320
+
+component stopwatch
+  <div class="card col">
+    <h1>Stopwatch</h1>
+    <div class="time">{{ (ticks / 10).toFixed(1) }}s</div>
+    <div class="row">
+      {#if running}
+        <button class="pill" on:click={stop}>stop</button>
+      {#else}
+        <button class="pill" on:click={start}>start</button>
+      {/if}
+      <button class="btn" on:click={reset}>reset</button>
+    </div>
+  </div>
+  <style>
+    .time{font-size:48px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+  </style>
+end
+
+handler stopwatch
+  state ticks = 0
+  state running = false
+  state timer = null
+  on start()
+    if running
+      return
+    end
+    running = true
+    timer = setInterval(() => { ticks = ticks + 1 }, 100)
+  end
+  on stop()
+    running = false
+    clearInterval(timer)
+  end
+  on reset()
+    running = false
+    clearInterval(timer)
+    ticks = 0
+  end
+end
+
+mount stopwatch

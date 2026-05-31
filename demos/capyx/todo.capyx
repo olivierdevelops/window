@@ -1,0 +1,49 @@
+app "Todo" 460x520
+
+component todo
+  <div class="card col">
+    <h1>Todo</h1>
+    <div class="row">
+      <input placeholder="add a task" bind:value={draft} />
+      <button class="pill" on:click={add}>add</button>
+    </div>
+    <p class="muted">{{ items.filter(x => !x.done).length }} of {{ items.length }} left</p>
+    <ul>
+      {#for item in items}
+        <li class="row">
+          <button class="btn" on:click={toggle}>{{ item.done ? "✓" : "○" }}</button>
+          <span class="grow" class:done={item.done}>{{ item.text }}</span>
+          <button class="btn" on:click={remove}>✕</button>
+        </li>
+      {#else}
+        <li class="muted">nothing yet — add a task above</li>
+      {/for}
+    </ul>
+  </div>
+  <style>
+    .grow{flex:1}
+    .done{text-decoration:line-through;color:#9a9aab}
+  </style>
+end
+
+handler todo
+  state items = []
+  state draft = ""
+  state nextId = 1
+  on add()
+    if draft.trim() == ""
+      return
+    end
+    items.push({id: nextId, text: draft.trim(), done: false})
+    nextId = nextId + 1
+    draft = ""
+  end
+  on toggle(item)
+    item.done = !item.done
+  end
+  on remove(item)
+    items = items.filter(x => x.id !== item.id)
+  end
+end
+
+mount todo

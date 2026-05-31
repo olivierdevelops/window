@@ -91,6 +91,7 @@
       <a href="#components">Components</a>
       <a href="#control">Control flow</a>
       <a href="#demos">Demos</a>
+      <a href="capyx.html">.capyx →</a>
       <a href="capyscript.html">.cs →</a>
       <a href="window-lang.html">.window →</a>
       <a href="index.html">← Home</a>
@@ -218,6 +219,29 @@ matches token "&lt;/"
     <p>The wrapper ships a cross-platform reset plus: <code>.card</code>, <code>.row</code>,
       <code>.grid</code>, <code>.btn</code>, <code>.muted</code>, <code>.badge</code>. Combine with
       inline <code>style="…"</code> for one-offs.</p>
+    <h3>Looks the same on every OS &amp; engine</h3>
+    <p>The three webview engines — WKWebView (macOS), WebView2/Chromium (Windows) and
+      WebKitGTK (Linux) — ship different UA defaults, system fonts, native form widgets
+      and scrollbars. The <code>.htmlx</code> wrapper neutralizes those differences so a
+      page renders near-identically everywhere:</p>
+    <ul>
+      <li><b>Pinned metrics</b> — explicit <code>font-size</code>, <code>line-height</code>,
+        <code>tab-size</code>, <code>box-sizing:border-box</code>, and
+        <code>font-synthesis:none</code> so missing font cuts never get faux-bolded
+        differently per OS.</li>
+      <li><b>Form controls reset to zero</b> — <code>appearance:none</code> on buttons and
+        fields, a custom SVG <code>&lt;select&gt;</code> arrow, normalized number spinners
+        and search decorations, a consistent <code>::placeholder</code> color, and a single
+        <code>:focus-visible</code> ring.</li>
+      <li><b>Native widgets tinted</b> — <code>accent-color</code> gives checkboxes, radios
+        and ranges the same color instead of the OS blue/green.</li>
+      <li><b>Styled scrollbars</b> — identical thin scrollbars via
+        <code>::-webkit-scrollbar</code> (Chromium/WebKit) and
+        <code>scrollbar-width/-color</code>, replacing macOS overlay vs Windows/Linux chunky bars.</li>
+      <li><b>Consistent type</b> — a deep <code>monospace</code> stack for
+        <code>&lt;pre&gt;</code>/<code>&lt;code&gt;</code>, antialiased smoothing, and a
+        <code>prefers-reduced-motion</code> guard.</li>
+    </ul>
     <h3>The one rule to remember</h3>
     <p>Text is <strong>quoted</strong>. One quoted string is one token, so multi-word text and even
       literal angle brackets live happily inside quotes. Bare unquoted prose between tags is not

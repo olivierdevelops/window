@@ -94,6 +94,8 @@ func ParseCLI() *domain.AppConfig {
 		cfg, err = loadWindowLang(configPath)
 	case ".htmlx":
 		cfg, err = loadHTMLX(configPath)
+	case ".capyx":
+		cfg, err = loadCapyx(configPath)
 	case ".cs":
 		cfg, err = loadCapyScript(configPath)
 	default:
@@ -135,6 +137,36 @@ func loadHTMLX(scriptPath string) (*domain.AppConfig, error) {
 		return nil, fmt.Errorf("transpile %s: %w", scriptPath, err)
 	}
 	return transpileSource(assets.HtmlxCapyLib, expanded, scriptPath)
+}
+
+// loadCapyx transpiles a .capyx source — a single-file reactive VHCO app (dumb
+// `component` views, `handler` state/event units, `capability`/`provide`
+// boundaries, an optional `orchestrator`, and `mount` lines) — into a runnable
+// window app. The fine-grained signals runtime is inlined into the generated
+// static/index.html. Generated files go to a temp dir.
+func loadCapyx(scriptPath string) (*domain.AppConfig, error) {
+	src, err := os.ReadFile(scriptPath)
+	if err != nil {
+		return nil, err
+	}
+	files, err := infra.CompileCapyx(string(src), string(assets.CapyxRuntimeJS))
+	if err != nil {
+		return nil, fmt.Errorf("transpile %s: %w", scriptPath, err)
+	}
+	dir, err := os.MkdirTemp("", "capyx_*")
+	if err != nil {
+		return nil, err
+	}
+	for rel, content := range files {
+		full := filepath.Join(dir, rel)
+		if err := os.MkdirAll(filepath.Dir(full), 0755); err != nil {
+			return nil, err
+		}
+		if err := os.WriteFile(full, []byte(content), 0644); err != nil {
+			return nil, err
+		}
+	}
+	return LoadApp(filepath.Join(dir, "window.yaml"), false)
 }
 
 // loadCapyScript transpiles a .cs source — a tiny JS-like scripting language

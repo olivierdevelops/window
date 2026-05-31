@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "site",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "const http=require('http'),fs=require('fs'),path=require('path');const root='/Users/oliverlaleau/Documents/projects/webview_gui/site';http.createServer((req,res)=>{let u=req.url.split('?')[0];let p=path.join(root,u==='/'?'index.html':u);fs.readFile(p,(e,d)=>{if(e){res.writeHead(404);res.end('not found');return;}res.writeHead(200,{'Content-Type':'text/html'});res.end(d);});}).listen(8099,'127.0.0.1',()=>console.log('serving on 8099'));"],
+      "port": 8099
+    }
+  ]
+}

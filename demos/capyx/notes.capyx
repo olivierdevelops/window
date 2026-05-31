@@ -1,0 +1,71 @@
+app "Notes" 460x440
+
+# capability / provide: the handler declares a port (Store) and the provider is
+# the only thing that touches "the outside world". Dependency injection wires
+# the provider into the handler at mount.
+
+capability Store
+  fn seed()
+  fn next(items)
+end
+
+provide Store as memStore
+  fn seed()
+    return [{id: 1, text: "Buy milk"}, {id: 2, text: "Call Sam"}]
+  end
+  fn next(items)
+    let max = 0
+    for n in items
+      if n.id > max
+        max = n.id
+      end
+    end
+    return max + 1
+  end
+end
+
+component notes
+  <div class="card col">
+    <h1>Notes</h1>
+    <div class="row">
+      <input placeholder="new note" bind:value={draft} />
+      <button class="pill" on:click={add}>add</button>
+    </div>
+    <ul>
+      {#for n in items}
+        <li class="row">
+          <span class="grow">{{ n.text }}</span>
+          <button class="btn" on:click={remove}>✕</button>
+        </li>
+      {/for}
+    </ul>
+    <button class="btn" on:click={reload}>reload from store</button>
+  </div>
+  <style>
+    .grow{flex:1}
+  </style>
+end
+
+handler notes
+  state items = []
+  state draft = ""
+  needs Store as store
+  on mount()
+    items = store.seed()
+  end
+  on add()
+    if draft.trim() == ""
+      return
+    end
+    items.push({id: store.next(items), text: draft.trim()})
+    draft = ""
+  end
+  on remove(note)
+    items = items.filter(x => x.id !== note.id)
+  end
+  on reload()
+    items = store.seed()
+  end
+end
+
+mount notes

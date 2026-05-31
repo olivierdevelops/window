@@ -1,0 +1,31 @@
+app "Accordion" 480x440
+
+component accordion
+  <div class="card col">
+    <h1>FAQ</h1>
+    {#for item in items}
+      <div class="item">
+        <button class="head" on:click={ open = open == $i ? -1 : $i }>
+          <span>{{ item.q }}</span>
+          <span>{{ open == $i ? "−" : "+" }}</span>
+        </button>
+        {#if open == $i}
+          <p class="body">{{ item.a }}</p>
+        {/if}
+      </div>
+    {/for}
+  </div>
+  <style>
+    .item{border:1px solid #e6e6ef;border-radius:10px;overflow:hidden}
+    .head{display:flex;justify-content:space-between;width:100%;background:#fff;border:none;padding:12px 14px;cursor:pointer;font:inherit}
+    .head:hover{background:#f6f6fb}
+    .body{margin:0;padding:0 14px 14px;color:#555}
+  </style>
+end
+
+handler accordion
+  state open = 0
+  state items = [{id: 1, q: "What is capyx?", a: "A single-file reactive app format."}, {id: 2, q: "Does it need a backend?", a: "No — state lives in handlers, fully client-side."}, {id: 3, q: "How are updates applied?", a: "Fine-grained: only bindings that read changed fields re-run."}]
+end
+
+mount accordion

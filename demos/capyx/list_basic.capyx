@@ -1,0 +1,33 @@
+app "List" 420x360
+
+component list_basic
+  <div class="card col">
+    <h1>Fruit list</h1>
+    <ul>
+      {#for item in items}
+        <li class="row">
+          <span class="badge">{{ $i + 1 }}</span>
+          <span>{{ item }}</span>
+        </li>
+      {#else}
+        <li class="muted">empty</li>
+      {/for}
+    </ul>
+    <div class="row">
+      <button class="pill" on:click={add}>add fruit</button>
+      <button class="btn" on:click={clear}>clear</button>
+    </div>
+  </div>
+end
+
+handler list_basic
+  state items = ["Apples", "Bananas", "Cherries"]
+  on add()
+    items.push("Fruit " + (items.length + 1))
+  end
+  on clear()
+    items = []
+  end
+end
+
+mount list_basic

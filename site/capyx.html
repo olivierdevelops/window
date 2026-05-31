@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="The .capyx format — a single-file reactive desktop app for window. Dumb components, handlers that own state, capability/provide boundaries and an orchestrator (VHCO). A fine-grained signals runtime makes updates surgical: mutate one field and only the bindings that read it re-run." />
+<title>.capyx — reactive single-file apps (VHCO) for window</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#7c7cff;--accent2:#58a6ff;--green:#3fb950;--red:#ff5f57;--yellow:#febc2e}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;font-size:15px}
+  a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:"SF Mono","Fira Code",ui-monospace,monospace}
+  svg{display:block;max-width:100%;height:auto}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  header.top{position:sticky;top:0;z-index:60;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  header.top .wrap{display:flex;align-items:center;gap:20px;height:58px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.3px}
+  .brand .mark{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+  header.top nav{margin-left:auto;display:flex;gap:22px;font-size:14px}
+  header.top nav a{color:var(--muted)}header.top nav a:hover{color:var(--text);text-decoration:none}
+  @media(max-width:680px){header.top nav{display:none}}
+
+  .hero{padding:56px 0 40px;border-bottom:1px solid var(--border);background:radial-gradient(900px 360px at 75% -10%,rgba(124,124,255,.18),transparent)}
+  .badge{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(124,124,255,.35);background:rgba(124,124,255,.12);color:var(--accent);border-radius:999px;padding:4px 12px;font-size:12px;margin-bottom:16px}
+  h1{font-size:2.6rem;line-height:1.08;letter-spacing:-1.4px;font-weight:800;margin-bottom:12px}
+  h1 code{font-size:2.6rem;color:var(--accent)}
+  .hero p.lead{color:var(--muted);font-size:1.06rem;max-width:680px;margin-bottom:20px}
+  .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:9px;font-weight:600;font-size:14px;border:1px solid transparent}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:var(--bg2);border-color:var(--border);color:var(--text)}
+  .btn:hover{transform:translateY(-1px);text-decoration:none}
+
+  section{padding:48px 0;border-bottom:1px solid var(--border)}
+  .eyebrow{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+  h2{font-size:1.6rem;letter-spacing:-.5px;margin-bottom:10px}
+  h3{font-size:1.1rem;margin:24px 0 8px}
+  p{color:var(--muted);margin-bottom:12px}
+  p strong,li strong{color:var(--text)}
+  ul{color:var(--muted);margin:0 0 12px 20px}li{margin-bottom:5px}
+  .lead-p{font-size:1.04rem;color:var(--muted);margin-bottom:16px;max-width:780px}
+
+  .code{position:relative;background:#0a0d12;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:12px 0}
+  .code .cap{padding:7px 14px;border-bottom:1px solid var(--border);font:12px ui-monospace,monospace;color:var(--muted);display:flex;gap:8px;align-items:center}
+  .code .cap .d{width:9px;height:9px;border-radius:50%}
+  .code pre{padding:14px 16px;overflow-x:auto}
+  .code code{font:12.5px/1.7 ui-monospace,monospace;color:#c9d1d9;white-space:pre}
+  .out{background:rgba(63,185,80,.05);border:1px solid rgba(63,185,80,.25);border-left:3px solid var(--green);border-radius:8px;padding:11px 14px;margin:12px 0}
+  .out .lbl{font:11px/1 ui-monospace,monospace;letter-spacing:.6px;color:var(--green);font-weight:700;display:block;margin-bottom:7px}
+  .out code{font:12.5px/1.6 ui-monospace,monospace;color:#aeb6c0;white-space:pre}
+
+  .sheet{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0}
+  .sheet th{text-align:left;padding:9px 12px;border-bottom:2px solid var(--border);color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+  .sheet td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  .sheet tr:hover td{background:var(--bg2)}
+  .sheet td:first-child{color:var(--text);white-space:nowrap}
+  .sheet code{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:12px;color:var(--accent2)}
+  .scroll{overflow-x:auto}
+
+  .diagram{margin:20px 0;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px}
+  .layers{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}
+  @media(max-width:760px){.layers{grid-template-columns:1fr 1fr}}
+  .layer{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px}
+  .layer h4{font-size:13px;color:var(--accent);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px}
+  .layer p{font-size:12.5px;margin:0}
+  .layer .k{display:inline-block;font:11px ui-monospace,monospace;color:var(--accent2);background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:1px 6px;margin-bottom:8px}
+
+  .demos{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+  @media(max-width:760px){.demos{grid-template-columns:1fr}}
+  .demo{background:var(--bg2);border:1px solid var(--border);border-radius:13px;overflow:hidden;display:flex;flex-direction:column}
+  .demo .dh{padding:14px 16px 4px}
+  .demo .dh b{font-size:1rem}.demo .dh p{font-size:12.5px;margin:4px 0 8px}
+  .tag{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:999px;background:rgba(124,124,255,.1);border:1px solid rgba(124,124,255,.3);color:var(--accent);margin:0 4px 6px 0}
+  .demo .code{margin:0;border:none;border-top:1px solid var(--border);border-radius:0;flex:1}
+  .demo .code .cap{font-size:11px}
+  .run{display:inline-block;font:11.5px ui-monospace,monospace;color:var(--green);background:#0a0d12;border:1px solid var(--border);border-radius:6px;padding:4px 9px;margin:10px 16px 14px}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0}
+  @media(max-width:760px){.cols{grid-template-columns:1fr}}
+  footer{padding:30px 0;color:var(--muted);font-size:13px}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+  .pill3{display:inline-flex;gap:6px;align-items:center;font:11px ui-monospace,monospace;color:var(--accent);background:rgba(124,124,255,.1);border:1px solid rgba(124,124,255,.3);border-radius:6px;padding:2px 8px;margin:0 4px 4px 0}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><span class="mark">W</span> window <span style="color:var(--muted);font-weight:500;font-size:13px">· .capyx format</span></div>
+    <nav>
+      <a href="#how">How</a>
+      <a href="#tour">Tour</a>
+      <a href="#reactivity">Reactivity</a>
+      <a href="#vhco">VHCO layers</a>
+      <a href="#reference">Reference</a>
+      <a href="#demos">Demos</a>
+      <a href="htmlx.html">.htmlx →</a>
+      <a href="window-lang.html">.window →</a>
+      <a href="index.html">← Home</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="wrap">
+    <span class="badge">● single file · fine-grained signals · VHCO architecture</span>
+    <h1>Reactive desktop apps in one <code>.capyx</code> file</h1>
+    <p class="lead">A <code>.capyx</code> file is a whole <strong>reactive</strong> native app: dumb
+      <code>component</code> views, <code>handler</code> units that own state and event logic,
+      <code>capability</code>/<code>provide</code> boundaries for the outside world, and an optional
+      <code>orchestrator</code> that owns shared data. <code>window app.capyx</code> compiles it to a
+      window app with a <strong>fine-grained signals runtime</strong> inlined — mutate one field and
+      only the bindings that read it re-run. No virtual DOM, no whole-tree re-render, no backend
+      process required.</p>
+    <div class="cta">
+      <a class="btn primary" href="#tour">See it →</a>
+      <a class="btn ghost" href="#demos">Browse 22 demos</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- HOW -->
+  <section id="how">
+    <div class="eyebrow">how it works</div>
+    <h2>Three braces, four layers, one inlined runtime</h2>
+    <p class="lead-p">The compiler (<a href="https://github.com/olivierdevelops/window/tree/main/infra">a pure text-transform in <code>infra/</code></a>)
+      parses your components into a node tree and emits JavaScript that builds DOM through a tiny
+      <strong>signals runtime</strong>. Each <code>{{ expr }}</code>, <code>class:x={…}</code> and
+      <code>attr={…}</code> becomes <em>its own effect</em>; <code>{#for}</code>/<code>{#if}</code>/<code>{#match}</code>
+      become dynamic regions whose control effect tracks only the loop or condition. There is no build
+      step you run — <code>window app.capyx</code> does it all and opens the window.</p>
+    <div class="diagram">
+      <svg viewBox="0 0 860 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A .capyx source is parsed into components, handlers, capabilities and an orchestrator, compiled to window.yaml plus static/index.html with the signals runtime inlined, then run by the window binary">
+        <defs><marker id="ah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#7c7cff"/></marker></defs>
+        <rect x="14" y="70" width="150" height="74" rx="11" fill="#161b22" stroke="#7c7cff"/>
+        <text x="89" y="100" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#c8c8ff">app.capyx</text>
+        <text x="89" y="120" text-anchor="middle" font-family="system-ui" font-size="10.5" fill="#8b949e">component · handler</text>
+        <line x1="170" y1="107" x2="226" y2="107" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="232" y="76" width="124" height="62" rx="11" fill="#1c2128" stroke="#30363d"/>
+        <text x="294" y="102" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">capyx</text>
+        <text x="294" y="120" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6e7681">compiler</text>
+        <line x1="362" y1="107" x2="418" y2="107" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="424" y="58" width="210" height="40" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="529" y="83" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11.5" fill="#3fb950">window.yaml</text>
+        <rect x="424" y="106" width="210" height="48" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="529" y="126" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11.5" fill="#c9d1d9">static/index.html</text>
+        <text x="529" y="143" text-anchor="middle" font-family="system-ui" font-size="9.5" fill="#6e7681">signals runtime inlined</text>
+        <line x1="640" y1="107" x2="696" y2="107" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="702" y="70" width="144" height="74" rx="11" fill="#1c2128" stroke="#7c7cff"/>
+        <text x="774" y="100" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">window</text>
+        <text x="774" y="120" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6e7681">native webview</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- TOUR -->
+  <section id="tour">
+    <div class="eyebrow">60-second tour</div>
+    <h2>A counter, start to finish</h2>
+    <p class="lead-p">A <code>component</code> is a dumb view. A <code>handler</code> owns
+      <code>state</code> and <code>on</code>-event methods that mutate <em>only their own state</em>.
+      <code>mount</code> places the component with its handler. That's the whole program.</p>
+    <div class="cols">
+      <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>counter.capyx</div>
+<pre><code>app "Counter" 420x300
+
+component counter
+  &lt;div class="card col"&gt;
+    &lt;h1&gt;Counter&lt;/h1&gt;
+    &lt;div class="row"&gt;
+      &lt;button class="btn" on:click={dec}&gt;-&lt;/button&gt;
+      &lt;span&gt;{{ count }}&lt;/span&gt;
+      &lt;button class="btn" on:click={inc}&gt;+&lt;/button&gt;
+    &lt;/div&gt;
+    {#if count &gt; 0}
+      &lt;p class="muted"&gt;{{ count }} and climbing.&lt;/p&gt;
+    {#elif count &lt; 0}
+      &lt;p class="muted"&gt;below zero.&lt;/p&gt;
+    {#else}
+      &lt;p class="muted"&gt;back to zero.&lt;/p&gt;
+    {/if}
+  &lt;/div&gt;
+end
+
+handler counter
+  state count = 0
+  on inc()
+    count = count + 1
+  end
+  on dec()
+    count = count - 1
+  end
+end
+
+mount counter</code></pre></div>
+      <div class="code"><div class="cap"><span class="d" style="background:#3fb950"></span>compiles to surgical bindings</div>
+<pre><code>// {{ count }} → its own effect
+CAPYX.text(function(){ return H.count; });
+
+// on:click={inc} → calls the handler method
+CAPYX.on(btn,"click",function(){ return H.inc(); });
+
+// {#if …} → control effect tracks only `count`
+CAPYX.when(function(){
+  return (H.count &gt; 0) ? 0
+       : (H.count &lt; 0) ? 1 : 2;
+}, [ /* one builder per branch */ ]);
+
+// the handler is a reactive proxy:
+//   count = count + 1   →   this.count = this.count + 1
+// the assignment triggers exactly the effects
+// that read `count` — the &lt;span&gt; and the {#if}.</code></pre></div>
+    </div>
+    <span class="run">window demos/capyx/counter.capyx</span>
+  </section>
+
+  <!-- REACTIVITY -->
+  <section id="reactivity">
+    <div class="eyebrow">the payoff</div>
+    <h2>Fine-grained: mutate one field, touch one binding</h2>
+    <p class="lead-p">The runtime is a small <strong>signals core</strong>: a reactive proxy
+      <code>track()</code>s every field read inside an effect and <code>trigger()</code>s only those
+      effects when the field changes. There is no diffing and no component re-render. In the
+      <a href="#demos">dashboard demo</a>, four progress bars each compile to their own
+      <code>style:width</code> effect — bumping one bar re-runs <em>that one effect</em> and nothing
+      else.</p>
+    <div class="cols">
+      <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>each bar is independent</div>
+<pre><code>{#for stat in stats}
+  &lt;div class="bar"&gt;
+    &lt;div class="fill"
+      style:width={ stat.value + "%" }&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;button on:click={bump}&gt;+10&lt;/button&gt;
+{/for}</code></pre></div>
+      <div class="out"><span class="lbl">WHAT RE-RUNS ON bump(cpu)</span>
+<code>stat.value = stat.value + 10
+      ↓ trigger(cpu, "value")
+only the CPU bar's width effect re-runs.
+Memory / Disk / Network bars: untouched.
+The list itself: not re-rendered.</code></div>
+    </div>
+    <p>Lists are <strong>keyed</strong>: <code>{#for item in items}</code> reconciles by
+      <code>item.id</code>, so adding, removing or reordering moves DOM nodes instead of rebuilding
+      them — and each row keeps its own effects. <code>{#if}</code> and <code>{#match}</code> dispose
+      the previous branch's effects when the branch key changes, so nothing leaks.</p>
+  </section>
+
+  <!-- VHCO LAYERS -->
+  <section id="vhco">
+    <div class="eyebrow">architecture</div>
+    <h2>Four layers, closed-world (VHCO)</h2>
+    <p class="lead-p">The format bakes in the <a href="https://github.com/olivierdevelops/window/blob/main/.codestyle">VHCO</a>
+      discipline: each unit only touches what it owns, and the outside world is reachable through one
+      explicit boundary. Views can't fetch; handlers can't reach the network directly; only a
+      <code>provide</code> block does I/O; the <code>orchestrator</code> owns shared data and wiring.</p>
+    <div class="layers">
+      <div class="layer"><span class="k">component</span><h4>View</h4><p>Dumb HTML + three-brace bindings. No state, no I/O. Reads <code>{{ field }}</code> from its handler <code>H</code>.</p></div>
+      <div class="layer"><span class="k">handler</span><h4>State + events</h4><p>Owns <code>state</code>; <code>on</code> methods mutate only that state and call injected ports. Never touches the outside world.</p></div>
+      <div class="layer"><span class="k">provide</span><h4>Capability</h4><p>Implements a <code>capability</code> protocol. The only layer allowed to do real I/O. Injected into handlers as a port.</p></div>
+      <div class="layer"><span class="k">orchestrator</span><h4>Shared data</h4><p>Owns cross-screen <code>data</code> + <code>boot</code>. Auto-injectable as a capability by its own name; one reactive store for many handlers.</p></div>
+    </div>
+    <div class="cols">
+      <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>capability + provide (dependency injection)</div>
+<pre><code>capability Store
+  fn seed()
+end
+
+provide Store as memStore
+  fn seed()
+    return [{id:1, text:"Buy milk"}]
+  end
+end
+
+handler notes
+  state items = []
+  needs Store as store      # injected port
+  on mount()
+    items = store.seed()    # handler never does I/O itself
+  end
+end</code></pre></div>
+      <div class="code"><div class="cap"><span class="d" style="background:#3fb950"></span>orchestrator = one shared reactive store</div>
+<pre><code>orchestrator hub
+  data
+    count = 0
+  end
+  on bump()
+    count = count + 1
+  end
+end
+
+# one component, mounted twice with two handlers;
+# both inject `hub`, so a click in either panel
+# updates the shared count everywhere.
+handler left for panel
+  state bus = null
+  needs hub as hub
+  on mount()  bus = hub  end
+  on inc()    hub.bump()  end
+end
+
+mount panel use left
+mount panel use right</code></pre></div>
+    </div>
+    <p><strong>Option-1 binding.</strong> Because a component is dumb and a handler is injected at
+      <code>mount</code>, the same view can be mounted many times with independent handlers —
+      <code>mount tasklist use today</code> and <code>mount tasklist use work</code> give two lists
+      that share zero state. Swap in a stub handler to test a view in isolation.</p>
+  </section>
+
+  <!-- REFERENCE -->
+  <section id="reference">
+    <div class="eyebrow">format reference</div>
+    <h2>Everything you can write</h2>
+    <h3>The three-brace rule</h3>
+    <div class="scroll"><table class="sheet">
+      <thead><tr><th>Syntax</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>{{ expr }}</code></td><td>Reactive text — escaped, re-runs when its reads change</td></tr>
+        <tr><td><code>attr={ expr }</code></td><td>Reactive attribute (<code>value</code>/<code>checked</code> bind as properties)</td></tr>
+        <tr><td><code>class:name={ expr }</code></td><td>Toggle a class when the expression is truthy</td></tr>
+        <tr><td><code>style:prop={ expr }</code></td><td>Set one CSS property reactively</td></tr>
+        <tr><td><code>on:event={ handler }</code></td><td>Event listener — a bare name calls <code>H.name(item)</code>, or inline code</td></tr>
+        <tr><td><code>bind:value={ field }</code></td><td>Two-way binding for inputs / <code>&lt;textarea&gt;</code> / <code>&lt;select&gt;</code></td></tr>
+        <tr><td><code>{#for x in list} … {#else} … {/for}</code></td><td>Keyed list with optional empty state</td></tr>
+        <tr><td><code>{#if c} {#elif c} {#else} {/if}</code></td><td>Conditional region</td></tr>
+        <tr><td><code>{#match e}{#case v}…{#default}…{/match}</code></td><td>Switch region</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Top-level constructs</h3>
+    <div class="scroll"><table class="sheet">
+      <thead><tr><th>Construct</th><th>What it declares</th></tr></thead>
+      <tbody>
+        <tr><td><code>app "Title" 460x520</code></td><td>Window title + size</td></tr>
+        <tr><td><code>theme key="value"</code></td><td>Design tokens → CSS variables (<code>{{ theme.key }}</code> in <code>&lt;style&gt;</code>)</td></tr>
+        <tr><td><code>component name … end</code></td><td>A view; optional scoped <code>&lt;style&gt;</code> block inside</td></tr>
+        <tr><td><code>handler name [for comp] … end</code></td><td><code>state</code>, <code>needs … as …</code> ports, <code>on name() … end</code> methods</td></tr>
+        <tr><td><code>capability Name … end</code></td><td>A port protocol (signatures only)</td></tr>
+        <tr><td><code>provide Cap as name … end</code></td><td>Capability implementation — <code>fn name() … end</code></td></tr>
+        <tr><td><code>orchestrator name … end</code></td><td><code>data … end</code>, <code>on boot()</code>, shared methods</td></tr>
+        <tr><td><code>mount comp [use handler] [as id]</code></td><td>Place a component with a handler</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Handler body mini-language</h3>
+    <p>Method bodies are a tiny Python-flavoured language compiled to JavaScript:
+      <code>if</code>/<code>elif</code>/<code>else</code>, <code>for x in list</code>, <code>while</code>,
+      <code>let</code>, <code>return</code>, <code>log</code>, and bare expressions — each block closed
+      with <code>end</code>. A bare reference to a state field is rewritten to flow through the
+      reactive proxy, so <code>count = count + 1</code> triggers exactly the bindings that read
+      <code>count</code>. Arrow functions, <code>await</code> (auto-async) and standard globals
+      (<code>Math</code>, <code>JSON</code>, <code>setInterval</code>…) all pass through.</p>
+  </section>
+
+  <!-- DEMOS -->
+  <section id="demos">
+    <div class="eyebrow">see it run · 22 demos, small → large</div>
+    <h2>Demos</h2>
+    <p class="lead-p">Every demo below lives in
+      <a href="https://github.com/olivierdevelops/window/tree/main/demos/capyx">demos/capyx/</a> and is
+      compiled, mounted under a headless DOM and exercised for real reactivity by
+      <a href="https://github.com/olivierdevelops/window/blob/main/demos/capyx/generate_test.go">generate_test.go</a>.
+      Run any of them with <code>window demos/capyx/&lt;name&gt;.capyx</code>.</p>
+
+    <div class="demos">
+      <div class="demo">
+        <div class="dh"><b>hello</b><p>Static component, no handler — the smallest app.</p>
+          <span class="tag">static</span></div>
+        <div class="code"><div class="cap">hello.capyx</div>
+<pre><code>component hello
+  &lt;div class="card col"&gt;
+    &lt;h1&gt;Hello, capyx&lt;/h1&gt;
+    &lt;span class="badge"&gt;no backend&lt;/span&gt;
+  &lt;/div&gt;
+end
+mount hello</code></pre></div>
+        <span class="run">window demos/capyx/hello.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>greeter</b><p>Two-way input bound to a live greeting.</p>
+          <span class="tag">bind:value</span><span class="tag">{#if}</span></div>
+        <div class="code"><div class="cap">greeter.capyx</div>
+<pre><code>&lt;input bind:value={name} /&gt;
+{#if name}
+  &lt;p&gt;Hello, &lt;strong&gt;{{ name }}&lt;/strong&gt;!&lt;/p&gt;
+{#else}
+  &lt;p class="muted"&gt;Type your name.&lt;/p&gt;
+{/if}</code></pre></div>
+        <span class="run">window demos/capyx/greeter.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>toggle</b><p>Boolean state drives a class and theme color.</p>
+          <span class="tag">class:on</span><span class="tag">theme</span></div>
+        <div class="code"><div class="cap">toggle.capyx</div>
+<pre><code>&lt;div class="box" class:on={on}&gt;
+  {{ on ? "ON" : "OFF" }}
+&lt;/div&gt;
+...
+on flip()
+  on = !on
+end</code></pre></div>
+        <span class="run">window demos/capyx/toggle.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>counter</b><p>Events plus <code>if/elif/else</code> regions.</p>
+          <span class="tag">on:click</span><span class="tag">{#elif}</span></div>
+        <div class="code"><div class="cap">counter.capyx</div>
+<pre><code>&lt;button on:click={dec}&gt;-&lt;/button&gt;
+&lt;span&gt;{{ count }}&lt;/span&gt;
+&lt;button on:click={inc}&gt;+&lt;/button&gt;
+...
+on inc()  count = count + 1  end</code></pre></div>
+        <span class="run">window demos/capyx/counter.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>temperature</b><p>One source field, many derived bindings.</p>
+          <span class="tag">derived</span><span class="tag">{#elif}</span></div>
+        <div class="code"><div class="cap">temperature.capyx</div>
+<pre><code>&lt;input type="number" bind:value={c} /&gt;
+&lt;p&gt;= {{ ((c*9/5)+32).toFixed(1) }} °F&lt;/p&gt;
+&lt;p&gt;= {{ (Number(c)+273.15).toFixed(1) }} K&lt;/p&gt;</code></pre></div>
+        <span class="run">window demos/capyx/temperature.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>tip_calculator</b><p>Two inputs, computed tip and total.</p>
+          <span class="tag">number</span><span class="tag">computed</span></div>
+        <div class="code"><div class="cap">tip_calculator.capyx</div>
+<pre><code>&lt;input bind:value={bill} /&gt;
+&lt;input bind:value={pct} /&gt;
+&lt;p&gt;Tip: {{ (bill*pct/100).toFixed(2) }}&lt;/p&gt;</code></pre></div>
+        <span class="run">window demos/capyx/tip_calculator.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>color_picker</b><p>RGB sliders feed a reactive <code>style:</code> swatch.</p>
+          <span class="tag">range</span><span class="tag">style:</span></div>
+        <div class="code"><div class="cap">color_picker.capyx</div>
+<pre><code>&lt;div class="swatch"
+  style:background={ "rgb("+r+","+g+","+b+")" }&gt;
+&lt;/div&gt;
+&lt;input type="range" max="255" bind:value={r} /&gt;</code></pre></div>
+        <span class="run">window demos/capyx/color_picker.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>list_basic</b><p>Loop over an array with index and empty state.</p>
+          <span class="tag">{#for}</span><span class="tag">{#else}</span></div>
+        <div class="code"><div class="cap">list_basic.capyx</div>
+<pre><code>{#for item in items}
+  &lt;li&gt;{{ $i + 1 }}. {{ item }}&lt;/li&gt;
+{#else}
+  &lt;li class="muted"&gt;empty&lt;/li&gt;
+{/for}</code></pre></div>
+        <span class="run">window demos/capyx/list_basic.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>star_rating</b><p>Hover + click state over a loop of stars.</p>
+          <span class="tag">on:mouseenter</span><span class="tag">{#for}</span></div>
+        <div class="code"><div class="cap">star_rating.capyx</div>
+<pre><code>{#for n in slots}
+  &lt;button on:click={ rating = n }
+    on:mouseenter={ hover = n }&gt;
+    {{ n &lt;= (hover||rating) ? "★" : "☆" }}
+  &lt;/button&gt;
+{/for}</code></pre></div>
+        <span class="run">window demos/capyx/star_rating.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>tabs</b><p><code>{#match}</code> swaps panels by key.</p>
+          <span class="tag">{#match}</span><span class="tag">{#case}</span></div>
+        <div class="code"><div class="cap">tabs.capyx</div>
+<pre><code>{#match tab}
+  {#case "home"}    &lt;p&gt;Home&lt;/p&gt;
+  {#case "profile"} &lt;p&gt;Profile&lt;/p&gt;
+  {#default}        &lt;p class="muted"&gt;Pick&lt;/p&gt;
+{/match}</code></pre></div>
+        <span class="run">window demos/capyx/tabs.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>accordion</b><p>Per-row <code>{#if}</code> keyed on the loop index.</p>
+          <span class="tag">{#for}</span><span class="tag">$i</span></div>
+        <div class="code"><div class="cap">accordion.capyx</div>
+<pre><code>{#for item in items}
+  &lt;button on:click={ open = open==$i ? -1 : $i }&gt;
+    {{ item.q }}&lt;/button&gt;
+  {#if open == $i}&lt;p&gt;{{ item.a }}&lt;/p&gt;{/if}
+{/for}</code></pre></div>
+        <span class="run">window demos/capyx/accordion.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>login_form</b><p>Multi-field validation with a status message.</p>
+          <span class="tag">validation</span><span class="tag">class:ok</span></div>
+        <div class="code"><div class="cap">login_form.capyx</div>
+<pre><code>on submit()
+  if user.trim() == ""
+    msg = "Username is required."
+    return
+  end
+  msg = "Welcome back, " + user + "!"
+  ok = true
+end</code></pre></div>
+        <span class="run">window demos/capyx/login_form.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>wordcount</b><p>Live stats off a bound <code>&lt;textarea&gt;</code>.</p>
+          <span class="tag">textarea</span><span class="tag">derived</span></div>
+        <div class="code"><div class="cap">wordcount.capyx</div>
+<pre><code>&lt;textarea bind:value={text}&gt;&lt;/textarea&gt;
+&lt;span&gt;{{ text.length }}&lt;/span&gt; chars
+&lt;span&gt;{{ text.trim().split(/\s+/).length }}&lt;/span&gt;
+  words</code></pre></div>
+        <span class="run">window demos/capyx/wordcount.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>stopwatch</b><p><code>setInterval</code> lives in the handler.</p>
+          <span class="tag">timers</span><span class="tag">{#if}</span></div>
+        <div class="code"><div class="cap">stopwatch.capyx</div>
+<pre><code>on start()
+  running = true
+  timer = setInterval(() =&gt; {
+    ticks = ticks + 1
+  }, 100)
+end</code></pre></div>
+        <span class="run">window demos/capyx/stopwatch.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>todo</b><p>Keyed-list CRUD — add, toggle, remove.</p>
+          <span class="tag">keyed list</span><span class="tag">.filter</span></div>
+        <div class="code"><div class="cap">todo.capyx</div>
+<pre><code>on add()
+  items.push({id: nextId, text: draft.trim(),
+              done: false})
+  nextId = nextId + 1
+end
+on remove(item)
+  items = items.filter(x =&gt; x.id !== item.id)
+end</code></pre></div>
+        <span class="run">window demos/capyx/todo.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>shopping_cart</b><p>Two lists and a <code>.reduce</code> total.</p>
+          <span class="tag">.reduce</span><span class="tag">two lists</span></div>
+        <div class="code"><div class="cap">shopping_cart.capyx</div>
+<pre><code>{#for p in products}
+  &lt;button on:click={add}&gt;add&lt;/button&gt;
+{/for}
+&lt;h3&gt;Total: ${{ cart.reduce(
+  (sum,x)=&gt; sum + x.price, 0) }}&lt;/h3&gt;</code></pre></div>
+        <span class="run">window demos/capyx/shopping_cart.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>quiz</b><p>Indexed flow with scoring and restart.</p>
+          <span class="tag">{#if}</span><span class="tag">{#for}</span></div>
+        <div class="code"><div class="cap">quiz.capyx</div>
+<pre><code>{#if done}
+  &lt;h2&gt;Score: {{ score }} / {{ questions.length }}&lt;/h2&gt;
+{#else}
+  &lt;h2&gt;{{ questions[idx].q }}&lt;/h2&gt;
+  {#for choice in questions[idx].choices} … {/for}
+{/if}</code></pre></div>
+        <span class="run">window demos/capyx/quiz.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>kanban</b><p>One list filtered into three columns; move cards.</p>
+          <span class="tag">.filter</span><span class="tag">3 columns</span></div>
+        <div class="code"><div class="cap">kanban.capyx</div>
+<pre><code>{#for card in cards.filter(x =&gt; x.col === 0)}
+  &lt;button on:click={right}&gt;→&lt;/button&gt;
+{/for}
+...
+on right(card)
+  if card.col &lt; 2  card.col = card.col + 1  end
+end</code></pre></div>
+        <span class="run">window demos/capyx/kanban.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>calculator</b><p>Keypad loop feeding an <code>eval</code> engine.</p>
+          <span class="tag">{#for}</span><span class="tag">eval</span></div>
+        <div class="code"><div class="cap">calculator.capyx</div>
+<pre><code>{#for key in keys}
+  &lt;button on:click={press}&gt;{{ key }}&lt;/button&gt;
+{/for}
+...
+on equals()  expr = String(eval(expr))  end</code></pre></div>
+        <span class="run">window demos/capyx/calculator.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>dashboard</b><p>Per-bar effects — bump one, the rest stay put.</p>
+          <span class="tag">style:width</span><span class="tag">fine-grained</span></div>
+        <div class="code"><div class="cap">dashboard.capyx</div>
+<pre><code>{#for stat in stats}
+  &lt;div class="fill"
+    style:width={ stat.value + "%" }&gt;&lt;/div&gt;
+  &lt;button on:click={bump}&gt;+10&lt;/button&gt;
+{/for}</code></pre></div>
+        <span class="run">window demos/capyx/dashboard.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>two_lists</b><p><b>Option-1:</b> one component, two handlers, zero shared state.</p>
+          <span class="tag">mount … use</span><span class="tag">isolation</span></div>
+        <div class="code"><div class="cap">two_lists.capyx</div>
+<pre><code>component tasklist … end
+handler today for tasklist … end
+handler work  for tasklist … end
+
+mount tasklist use today
+mount tasklist use work</code></pre></div>
+        <span class="run">window demos/capyx/two_lists.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>notes</b><p><b>Capability / provide:</b> dependency injection.</p>
+          <span class="tag">capability</span><span class="tag">provide</span></div>
+        <div class="code"><div class="cap">notes.capyx</div>
+<pre><code>provide Store as memStore
+  fn seed()  return [{id:1, text:"Buy milk"}]  end
+end
+handler notes
+  needs Store as store
+  on mount()  items = store.seed()  end
+end</code></pre></div>
+        <span class="run">window demos/capyx/notes.capyx</span>
+      </div>
+
+      <div class="demo">
+        <div class="dh"><b>orchestrator</b><p>One shared reactive store across two panels.</p>
+          <span class="tag">orchestrator</span><span class="tag">shared state</span></div>
+        <div class="code"><div class="cap">orchestrator.capyx</div>
+<pre><code>orchestrator hub
+  data  count = 0  end
+  on bump()  count = count + 1  end
+end
+# click in panel A updates panel B too
+mount panel use left
+mount panel use right</code></pre></div>
+        <span class="run">window demos/capyx/orchestrator.capyx</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHICH ONE -->
+  <section id="vs">
+    <div class="eyebrow">which format</div>
+    <h2><code>.capyx</code> vs <code>.window</code> vs <code>.htmlx</code></h2>
+    <div class="scroll"><table class="sheet">
+      <thead><tr><th></th><th>.capyx</th><th>.window</th><th>.htmlx</th></tr></thead>
+      <tbody>
+        <tr><td>You write</td><td>Reactive components + handlers</td><td>High-level widgets + state</td><td>HTML markup by hand</td></tr>
+        <tr><td>Reactivity</td><td>Fine-grained signals (per-binding)</td><td>Reactive store</td><td>—</td></tr>
+        <tr><td>Architecture</td><td>VHCO: view / handler / capability / orchestrator</td><td>Store + actions</td><td>Tags only</td></tr>
+        <tr><td>Backend</td><td>None needed — logic is in-file</td><td>In-process Go handlers</td><td>—</td></tr>
+        <tr><td>Best for</td><td>Interactive apps, clean separation, testable views</td><td>Stateful apps with a Go backend</td><td>Static pages</td></tr>
+      </tbody>
+    </table></div>
+    <p>All three are first-class <code>window</code> formats picked by file extension — no flags, no config.</p>
+  </section>
+
+  <!-- LEARN MORE -->
+  <section id="learn">
+    <div class="eyebrow">go deeper</div>
+    <h2>Learn more</h2>
+    <ul>
+      <li><a href="https://github.com/olivierdevelops/window/tree/main/demos/capyx">demos/capyx/</a> — all 22 demos above, plus the test harness</li>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/assets/capyx_runtime.js">assets/capyx_runtime.js</a> — the whole fine-grained signals runtime (~380 lines)</li>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/capyx-reactive-vhco.md">docs/capyx-reactive-vhco.md</a> — the format, layer by layer</li>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/.codestyle">.codestyle</a> — the VHCO architecture the format encodes</li>
+      <li><a href="htmlx.html">The <code>.htmlx</code> format</a> · <a href="window-lang.html">the <code>.window</code> language</a> — the other two formats</li>
+    </ul>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>window · the .capyx format · MIT</span>
+    <span><a href="index.html">← Home</a> · <a href="https://github.com/olivierdevelops/window">GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
