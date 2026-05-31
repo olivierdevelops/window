@@ -7,9 +7,9 @@ import (
 
 func TestExpandControlFlowFor(t *testing.T) {
 	src := `<ul>
-<for each="Home, About, Contact" as="label">
-  <li><a href="#">"{label}"</a></li>
-</for>
+{#for label in Home, About, Contact}
+  <li><a href="#">"{{ label }}"</a></li>
+{/for}
 </ul>`
 	out, err := ExpandControlFlow(src)
 	if err != nil {
@@ -24,17 +24,17 @@ func TestExpandControlFlowFor(t *testing.T) {
 			t.Errorf("missing %q\n---\n%s", want, out)
 		}
 	}
-	if strings.Contains(out, "<for") || strings.Contains(out, "{label}") {
+	if strings.Contains(out, "{#for") || strings.Contains(out, "{{ label }}") {
 		t.Errorf("control tags / vars leaked\n%s", out)
 	}
 }
 
 func TestExpandControlFlowIfElse(t *testing.T) {
-	src := `<if value="admin" is="admin">
+	src := `{#if admin == admin}
   <p>"welcome boss"</p>
-<else>
+{#else}
   <p>"hello user"</p>
-</if>`
+{/if}`
 	out, err := ExpandControlFlow(src)
 	if err != nil {
 		t.Fatalf("expand: %v", err)
@@ -47,10 +47,31 @@ func TestExpandControlFlowIfElse(t *testing.T) {
 	}
 }
 
+func TestExpandControlFlowElif(t *testing.T) {
+	src := `{#for role in admin, editor, guest}
+{#if role == admin}
+  <p>"{{ role }}: full"</p>
+{#elif role == editor}
+  <p>"{{ role }}: edit"</p>
+{#else}
+  <p>"{{ role }}: view"</p>
+{/if}
+{/for}`
+	out, err := ExpandControlFlow(src)
+	if err != nil {
+		t.Fatalf("expand: %v", err)
+	}
+	for _, want := range []string{`"admin: full"`, `"editor: edit"`, `"guest: view"`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %q\n%s", want, out)
+		}
+	}
+}
+
 func TestExpandControlFlowIfIn(t *testing.T) {
-	src := `<if value="b" in="a, b, c">
+	src := `{#if b in a, b, c}
   <p>"yes"</p>
-</if>`
+{/if}`
 	out, err := ExpandControlFlow(src)
 	if err != nil {
 		t.Fatalf("expand: %v", err)
@@ -60,18 +81,15 @@ func TestExpandControlFlowIfIn(t *testing.T) {
 	}
 }
 
-func TestExpandControlFlowSwitch(t *testing.T) {
-	src := `<switch value="ok">
-  <case is="ok">
+func TestExpandControlFlowMatch(t *testing.T) {
+	src := `{#match ok}
+  {#case ok}
     <p>"all good"</p>
-  </case>
-  <case is="err">
+  {#case err}
     <p>"broken"</p>
-  </case>
-  <default>
+  {#default}
     <p>"unknown"</p>
-  </default>
-</switch>`
+{/match}`
 	out, err := ExpandControlFlow(src)
 	if err != nil {
 		t.Fatalf("expand: %v", err)
@@ -84,15 +102,13 @@ func TestExpandControlFlowSwitch(t *testing.T) {
 	}
 }
 
-func TestExpandControlFlowSwitchDefault(t *testing.T) {
-	src := `<switch value="zzz">
-  <case is="ok">
+func TestExpandControlFlowMatchDefault(t *testing.T) {
+	src := `{#match zzz}
+  {#case ok}
     <p>"all good"</p>
-  </case>
-  <default>
+  {#default}
     <p>"unknown"</p>
-  </default>
-</switch>`
+{/match}`
 	out, err := ExpandControlFlow(src)
 	if err != nil {
 		t.Fatalf("expand: %v", err)
@@ -103,14 +119,14 @@ func TestExpandControlFlowSwitchDefault(t *testing.T) {
 }
 
 func TestExpandControlFlowNested(t *testing.T) {
-	// <if> inside <for> sees the loop variable.
-	src := `<for each="admin, guest" as="role">
-<if value="{role}" is="admin">
-  <p>"{role} can edit"</p>
-<else>
-  <p>"{role} is read-only"</p>
-</if>
-</for>`
+	// {#if} inside {#for} sees the loop variable.
+	src := `{#for role in admin, guest}
+{#if role == admin}
+  <p>"{{ role }} can edit"</p>
+{#else}
+  <p>"{{ role }} is read-only"</p>
+{/if}
+{/for}`
 	out, err := ExpandControlFlow(src)
 	if err != nil {
 		t.Fatalf("expand: %v", err)
@@ -123,9 +139,32 @@ func TestExpandControlFlowNested(t *testing.T) {
 	}
 }
 
+func TestExpandControlFlowNestedMatch(t *testing.T) {
+	// {#match} inside {#for} resolves the loop variable per item.
+	src := `{#for role in admin, editor, guest}
+{#match role}
+  {#case admin}
+    <p>"full"</p>
+  {#case editor}
+    <p>"edit"</p>
+  {#default}
+    <p>"view"</p>
+{/match}
+{/for}`
+	out, err := ExpandControlFlow(src)
+	if err != nil {
+		t.Fatalf("expand: %v", err)
+	}
+	for _, want := range []string{`"full"`, `"edit"`, `"view"`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %q\n%s", want, out)
+		}
+	}
+}
+
 func TestExpandControlFlowLeavesPlainText(t *testing.T) {
 	src := `<app title="X" width="1" height="1">
-  <p>"a <for> in quotes stays"</p>
+  <p>"a {#for} in quotes stays"</p>
 </app>`
 	out, err := ExpandControlFlow(src)
 	if err != nil {
@@ -137,7 +176,13 @@ func TestExpandControlFlowLeavesPlainText(t *testing.T) {
 }
 
 func TestExpandControlFlowUnclosed(t *testing.T) {
-	if _, err := ExpandControlFlow("<for each=\"a\" as=\"x\">\n  <li>\"{x}\"</li>"); err == nil {
-		t.Fatal("expected error for unclosed <for>")
+	if _, err := ExpandControlFlow("{#for x in a}\n  <li>\"{{ x }}\"</li>"); err == nil {
+		t.Fatal("expected error for unclosed {#for}")
+	}
+}
+
+func TestExpandControlFlowBadCondition(t *testing.T) {
+	if _, err := ExpandControlFlow("{#if role}\n  <p>\"x\"</p>\n{/if}"); err == nil {
+		t.Fatal("expected error for a condition without == or in")
 	}
 }

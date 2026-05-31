@@ -1,0 +1,36 @@
+suite "Counter component"
+use ./counter.capyx
+
+scenario "starts at zero"
+    mount counter
+    expect text "0"
+    expect state count 0
+
+scenario "increments on +"
+    mount counter
+    click "+"
+    click "+"
+    click "+"
+    expect state count 3
+    expect text "3"
+
+scenario "decrements on -"
+    mount counter
+    click "+"
+    click "-"
+    click "-"
+    expect state count -1
+
+scenario "reset returns to zero from any state"
+    mount counter
+    set count 42
+    expect text "42"
+    click "reset"
+    expect state count 0
+    expect text "back to zero"
+
+scenario "shows climbing message when positive"
+    mount counter
+    click "+"
+    expect text "climbing"
+    expect no text "below zero"

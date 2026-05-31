@@ -20,12 +20,23 @@ window window.yaml
 Or run any demo:
 
 ```bash
-window demos/hello/window.yaml        # static HTML
-window demos/dashboard/window.yaml    # Chart.js via js_inject
-window demos/file_explorer/window.yaml # native file system
-window demos/terminal/window.yaml     # native OS exec
-window demos/counter/window.yaml      # Python backend
+window demos/hello/window.yaml           # static HTML
+window demos/htmlx/hello.htmlx           # matched-pair HTML app
+window demos/capy/counter.window           # .window app language
+window demos/capyx/counter.capyx         # reactive VHCO app
+window demos/dashboard/window.yaml       # Chart.js via js_inject
+window demos/file_explorer/window.yaml   # native file system
+window demos/terminal/window.yaml        # native OS exec
+window demos/counter/window.yaml         # Python backend
+
+window test demos/capyx/counter.capytest    # test components headlessly (no browser/Selenium)
+window test --ui demos/capyx/counter.capyx  # interactive component Test Bench
 ```
+
+Authoring formats (`.htmlx`, `.window`, `.capyx`, `.cs`) transpile or compile
+into a runnable app in one step — see [docs/authoring-formats.md](docs/authoring-formats.md).
+`.capyx` components are isolated, so you can test them with no browser — see
+[docs/capyx-testing.md](docs/capyx-testing.md).
 
 ---
 
@@ -205,6 +216,10 @@ Full reference: [docs/configuration.md](docs/configuration.md)
 | Demo | What it shows |
 |------|--------------|
 | `hello` | Minimal static app |
+| `htmlx/*` | Matched-pair HTML apps — 7 `.htmlx` demos (components, control flow) |
+| `capy/*` | `.window` app language — 34 declarative apps |
+| `capyx/*` | Reactive VHCO apps — 25 `.capyx` demos, with `.capytest` isolation tests |
+| `cs/*` | CapyScript — `.cs` → JavaScript |
 | `counter` | Python backend, bidirectional calls, server push |
 | `dashboard` | `js_inject` with Chart.js — live charts |
 | `file_explorer` | `native_features: [fs]` — no backend needed |
@@ -259,6 +274,8 @@ Architecture details: [docs/architecture.md](docs/architecture.md)
 
 | Document | Contents |
 |----------|----------|
+| [docs/authoring-formats.md](docs/authoring-formats.md) | `.htmlx`, `.cs`, `<component>`, control flow, `.capyx` overview |
+| [docs/capyx-testing.md](docs/capyx-testing.md) | Test `.capyx` components in isolation — `.capytest` format, headless runner, interactive Test Bench (no browser/Selenium) |
 | [docs/configuration.md](docs/configuration.md) | Full `window.yaml` reference |
 | [docs/backend-protocol.md](docs/backend-protocol.md) | Socket IPC protocol, Python client, JS API |
 | [docs/native-features.md](docs/native-features.md) | `NATIVE.fs`, `NATIVE.os`, `NATIVE.dialogs`, `NATIVE.canvas` |

@@ -95,6 +95,7 @@
       <a href="#reactivity">Reactivity</a>
       <a href="#vhco">VHCO layers</a>
       <a href="#reference">Reference</a>
+      <a href="#testing">Testing</a>
       <a href="#demos">Demos</a>
       <a href="htmlx.html">.htmlx →</a>
       <a href="window-lang.html">.window →</a>
@@ -117,7 +118,8 @@
       process required.</p>
     <div class="cta">
       <a class="btn primary" href="#tour">See it →</a>
-      <a class="btn ghost" href="#demos">Browse 22 demos</a>
+      <a class="btn ghost" href="#demos">Browse 25 demos</a>
+      <a class="btn ghost" href="#testing">Test without a browser →</a>
     </div>
   </div>
 </div>
@@ -357,7 +359,7 @@ mount panel use right</code></pre></div>
 
   <!-- DEMOS -->
   <section id="demos">
-    <div class="eyebrow">see it run · 22 demos, small → large</div>
+    <div class="eyebrow">see it run · 25 demos, small → large</div>
     <h2>Demos</h2>
     <p class="lead-p">Every demo below lives in
       <a href="https://github.com/olivierdevelops/window/tree/main/demos/capyx">demos/capyx/</a> and is
@@ -659,6 +661,51 @@ mount panel use right</code></pre></div>
     </div>
   </section>
 
+  <!-- TESTING -->
+  <section id="testing">
+    <div class="eyebrow">the payoff · no browser, no Selenium</div>
+    <h2>Test components in full isolation</h2>
+    <p class="lead-p">Because every <code>.capyx</code> component is an isolated VHCO unit — a dumb view,
+      a <code>handler</code> that owns its state, and <code>capability</code> ports that are the only seam to
+      the outside world — you can test each one <strong>on its own</strong>: mount it alone, set its initial
+      state to anything, replace its capabilities with recording <strong>mocks</strong>, fire events, and assert
+      on the rendered output or state. No real services, no running window, and no browser automation.</p>
+
+    <p class="lead-p">Author scenarios in the readable <code>.capytest</code> format — diff-friendly enough for a
+      non-developer to edit:</p>
+
+    <div class="code"><div class="cap">notes.capytest</div>
+<pre><code>suite "Notes with a mocked Store"
+use ./notes.capyx
+
+scenario "renders notes from a mocked store"
+    mock Store.seed returns [{"id":10,"text":"Mocked note"}]
+    mount notes
+    expect text "Mocked note"
+    expect count li 1
+    expect called Store.seed 1
+
+scenario "reset returns the counter to zero"
+    mount counter
+    set count 42
+    click "reset"
+    expect state count 0
+    expect text "back to zero"</code></pre></div>
+
+    <p class="lead-p">Run a whole suite headlessly for CI (exits non-zero on failure), or open the interactive
+      <strong>Test Bench</strong> to pick a component, drive it live in an isolated preview, mock its services,
+      and <strong>record your clicks straight into a runnable <code>.capytest</code></strong>:</p>
+
+    <span class="run">window test demos/capyx/notes.capytest</span>
+    <span class="run">window test --ui demos/capyx/counter.capyx</span>
+
+    <p class="lead-p" style="margin-top:18px">The headless runner and the bench share one kernel
+      (<a href="https://github.com/olivierdevelops/window/blob/main/assets/capyx_testkit.js">capyx_testkit.js</a>):
+      mount-in-isolation, capability mocks, drivers and assertions are identical whether a scenario runs under a
+      tiny Node DOM shim in CI or in the real webview. Full guide:
+      <a href="https://github.com/olivierdevelops/window/blob/main/docs/capyx-testing.md">docs/capyx-testing.md</a>.</p>
+  </section>
+
   <!-- WHICH ONE -->
   <section id="vs">
     <div class="eyebrow">which format</div>
@@ -671,6 +718,7 @@ mount panel use right</code></pre></div>
         <tr><td>Architecture</td><td>VHCO: view / handler / capability / orchestrator</td><td>Store + actions</td><td>Tags only</td></tr>
         <tr><td>Backend</td><td>None needed — logic is in-file</td><td>In-process Go handlers</td><td>—</td></tr>
         <tr><td>Best for</td><td>Interactive apps, clean separation, testable views</td><td>Stateful apps with a Go backend</td><td>Static pages</td></tr>
+        <tr><td>Testing</td><td>Isolated component tests — <code>.capytest</code> + Test Bench, no browser</td><td>Go handler tests</td><td>—</td></tr>
       </tbody>
     </table></div>
     <p>All three are first-class <code>window</code> formats picked by file extension — no flags, no config.</p>
@@ -681,9 +729,10 @@ mount panel use right</code></pre></div>
     <div class="eyebrow">go deeper</div>
     <h2>Learn more</h2>
     <ul>
-      <li><a href="https://github.com/olivierdevelops/window/tree/main/demos/capyx">demos/capyx/</a> — all 22 demos above, plus the test harness</li>
+      <li><a href="https://github.com/olivierdevelops/window/tree/main/demos/capyx">demos/capyx/</a> — all 25 demos above, plus the test harness and <code>.capytest</code> suites</li>
       <li><a href="https://github.com/olivierdevelops/window/blob/main/assets/capyx_runtime.js">assets/capyx_runtime.js</a> — the whole fine-grained signals runtime (~380 lines)</li>
       <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/capyx-reactive-vhco.md">docs/capyx-reactive-vhco.md</a> — the format, layer by layer</li>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/capyx-testing.md">docs/capyx-testing.md</a> — testing components in isolation: <code>.capytest</code> + the Test Bench (no browser/Selenium)</li>
       <li><a href="https://github.com/olivierdevelops/window/blob/main/.codestyle">.codestyle</a> — the VHCO architecture the format encodes</li>
       <li><a href="htmlx.html">The <code>.htmlx</code> format</a> · <a href="window-lang.html">the <code>.window</code> language</a> — the other two formats</li>
     </ul>

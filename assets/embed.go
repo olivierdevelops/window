@@ -52,3 +52,12 @@ var CapyScriptLib []byte
 
 //go:embed capyx_runtime.js
 var CapyxRuntimeJS []byte
+
+//go:embed capyx_testkit.js
+var CapyxTestkitJS []byte
+
+//go:embed capyx_dom_shim.js
+var CapyxDOMShimJS []byte
+
+//go:embed capyx_testbench.js
+var CapyxTestbenchJS []byte

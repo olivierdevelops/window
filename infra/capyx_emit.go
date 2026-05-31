@@ -90,7 +90,39 @@ func (app *capyxApp) genThemeCSS() string {
 
 func (app *capyxApp) genAppJS() (string, error) {
 	var b strings.Builder
-	b.WriteString("(function(){\n\"use strict\";\nvar PROVIDERS = {};\n")
+	b.WriteString("(function(){\n\"use strict\";\n")
+	if err := app.genDefsJS(&b); err != nil {
+		return "", err
+	}
+
+	// Mounts + bootstrap.
+	b.WriteString("function __capyxStart(){\nvar __root = document.getElementById(\"app\");\n")
+	handlerNames := map[string]bool{}
+	for _, h := range app.handlers {
+		handlerNames[h.name] = true
+	}
+	for _, m := range app.mounts {
+		hexpr := "null"
+		if handlerNames[m.handler] {
+			hexpr = "H_" + jsName(m.handler) + "()"
+		}
+		b.WriteString("CAPYX.mount(__root, (function(__H){return function(){return C_" +
+			jsName(m.component) + "(__H);};})(" + hexpr + "));\n")
+	}
+	if app.orch != nil && app.orch.boot != nil {
+		b.WriteString("if (APP && APP.boot) APP.boot();\n")
+	}
+	b.WriteString("}\nif (document.readyState !== \"loading\") __capyxStart(); else document.addEventListener(\"DOMContentLoaded\", __capyxStart);\n")
+	b.WriteString("})();\n")
+	return b.String(), nil
+}
+
+// genDefsJS emits the shared definitions of an app — capability providers, the
+// optional orchestrator (as APP), handler factories (H_<name>), and component
+// render functions (C_<name>) — without any mount/bootstrap. Both the runnable
+// app build and the isolation harness build reuse it.
+func (app *capyxApp) genDefsJS(b *strings.Builder) error {
+	b.WriteString("var PROVIDERS = {};\n")
 
 	// Providers (capability implementations).
 	for _, p := range app.providers {
@@ -137,31 +169,11 @@ func (app *capyxApp) genAppJS() (string, error) {
 	for _, c := range app.components {
 		js, err := app.genComponentFn(c)
 		if err != nil {
-			return "", err
+			return err
 		}
 		b.WriteString(js)
 	}
-
-	// Mounts + bootstrap.
-	b.WriteString("function __capyxStart(){\nvar __root = document.getElementById(\"app\");\n")
-	handlerNames := map[string]bool{}
-	for _, h := range app.handlers {
-		handlerNames[h.name] = true
-	}
-	for _, m := range app.mounts {
-		hexpr := "null"
-		if handlerNames[m.handler] {
-			hexpr = "H_" + jsName(m.handler) + "()"
-		}
-		b.WriteString("CAPYX.mount(__root, (function(__H){return function(){return C_" +
-			jsName(m.component) + "(__H);};})(" + hexpr + "));\n")
-	}
-	if app.orch != nil && app.orch.boot != nil {
-		b.WriteString("if (APP && APP.boot) APP.boot();\n")
-	}
-	b.WriteString("}\nif (document.readyState !== \"loading\") __capyxStart(); else document.addEventListener(\"DOMContentLoaded\", __capyxStart);\n")
-	b.WriteString("})();\n")
-	return b.String(), nil
+	return nil
 }
 
 func (app *capyxApp) genHandlerFactory(h capyxHandler) string {

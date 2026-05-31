@@ -61,6 +61,11 @@ func ParseCLI() *domain.AppConfig {
 		}
 		return nil
 
+	case "test":
+		// window test <suite.capytest>      → headless run (CI-friendly)
+		// window test --ui <app.capyx>       → open the interactive Test Bench
+		return handleTestCommand(os.Args[2:])
+
 	case "--build", "--capy":
 		// Explicitly transpile a .window source and run it. The bare form
 		// `window app.window` (handled below by extension) does the same.
@@ -96,6 +101,9 @@ func ParseCLI() *domain.AppConfig {
 		cfg, err = loadHTMLX(configPath)
 	case ".capyx":
 		cfg, err = loadCapyx(configPath)
+	case ".capytest":
+		runCapyTestSuite(configPath) // prints results and exits
+		return nil
 	case ".cs":
 		cfg, err = loadCapyScript(configPath)
 	default:
@@ -210,6 +218,131 @@ func transpileSource(library []byte, src, label string) (*domain.AppConfig, erro
 		}
 	}
 	return LoadApp(filepath.Join(dir, "window.yaml"), false)
+}
+
+// handleTestCommand implements `window test …`. With --ui it opens the
+// interactive Test Bench for a .capyx app (returning a runnable AppConfig);
+// otherwise it runs a .capytest suite headlessly and exits with a CI status.
+func handleTestCommand(args []string) *domain.AppConfig {
+	ui := false
+	var path string
+	for _, a := range args {
+		if a == "--ui" || a == "-ui" {
+			ui = true
+		} else if path == "" {
+			path = a
+		}
+	}
+	if path == "" {
+		log.Fatal("usage: window test <suite.capytest>  |  window test --ui <app.capyx>")
+	}
+	if os.Getenv("DEBUG") != "1" {
+		log.SetOutput(&noLog{})
+	}
+	if ui {
+		cfg, err := loadCapyxBench(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return cfg
+	}
+	runCapyTestSuite(path)
+	return nil
+}
+
+// loadCapyxBench compiles a .capyx app into the interactive Test Bench page and
+// loads it as a runnable window app.
+func loadCapyxBench(scriptPath string) (*domain.AppConfig, error) {
+	src, err := os.ReadFile(scriptPath)
+	if err != nil {
+		return nil, err
+	}
+	files, err := infra.CompileCapyxBench(string(src),
+		string(assets.CapyxRuntimeJS), string(assets.CapyxTestkitJS), string(assets.CapyxTestbenchJS))
+	if err != nil {
+		return nil, fmt.Errorf("build test bench for %s: %w", scriptPath, err)
+	}
+	dir, err := materialize(files)
+	if err != nil {
+		return nil, err
+	}
+	return LoadApp(filepath.Join(dir, "window.yaml"), false)
+}
+
+// runCapyTestSuite parses a .capytest file, runs every scenario headlessly, and
+// exits non-zero if any scenario fails.
+func runCapyTestSuite(testPath string) {
+	src, err := os.ReadFile(testPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	suite, err := infra.ParseCapyTest(string(src))
+	if err != nil {
+		log.Fatalf("%s: %v", testPath, err)
+	}
+	capyxPath := suite.Use
+	if capyxPath == "" {
+		log.Fatalf("%s: suite has no `use <app.capyx>`", testPath)
+	}
+	if !filepath.IsAbs(capyxPath) {
+		capyxPath = filepath.Join(filepath.Dir(testPath), capyxPath)
+	}
+	capyxSrc, err := os.ReadFile(capyxPath)
+	if err != nil {
+		log.Fatalf("read app under test %s: %v", capyxPath, err)
+	}
+	res, err := infra.RunCapyTest(suite, string(capyxSrc),
+		string(assets.CapyxRuntimeJS), string(assets.CapyxTestkitJS), string(assets.CapyxDOMShimJS))
+	if err != nil {
+		log.Fatal(err)
+	}
+	printSuiteResult(res)
+	if res.Failed > 0 {
+		os.Exit(1)
+	}
+}
+
+// printSuiteResult renders a human-readable pass/fail report to stdout.
+func printSuiteResult(res *infra.SuiteResult) {
+	if res.Name != "" {
+		fmt.Printf("\n  %s\n", res.Name)
+	}
+	for _, sc := range res.Results {
+		mark := "✓"
+		if !sc.Ok {
+			mark = "✗"
+		}
+		fmt.Printf("  %s %s\n", mark, sc.Name)
+		if !sc.Ok {
+			for _, st := range sc.Steps {
+				if !st.Ok {
+					fmt.Printf("      ✗ %s: %s\n", st.Op, st.Message)
+				}
+			}
+			if sc.Error != "" {
+				fmt.Printf("      ! %s\n", sc.Error)
+			}
+		}
+	}
+	fmt.Printf("\n  %d passed, %d failed\n\n", res.Passed, res.Failed)
+}
+
+// materialize writes a generated file map to a fresh temp dir and returns it.
+func materialize(files map[string]string) (string, error) {
+	dir, err := os.MkdirTemp("", "capyx_*")
+	if err != nil {
+		return "", err
+	}
+	for rel, content := range files {
+		full := filepath.Join(dir, rel)
+		if err := os.MkdirAll(filepath.Dir(full), 0755); err != nil {
+			return "", err
+		}
+		if err := os.WriteFile(full, []byte(content), 0644); err != nil {
+			return "", err
+		}
+	}
+	return dir, nil
 }
 
 type noLog struct{}

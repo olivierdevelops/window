@@ -7,7 +7,7 @@ same thing: a `window.yaml` + a `static/` frontend that the native webview runs.
 |---|---|---|---|
 | Matched-pair HTML | `.htmlx` | a full HTML document | static pages, full layout control |
 | A JS-like script | `.cs` | real JavaScript | algorithms, scratch logic |
-| Custom HTML tags | `.htmlx` + `define` | your own components | reusable UI pieces |
+| Custom HTML tags | `.htmlx` + `<component>` | your own components | reusable UI pieces |
 | Reactive VHCO app | `.capyx` | HTML + signals runtime | stateful, fine-grained reactive UIs |
 
 The `.htmlx` / `.cs` formats are transpiled by the
@@ -30,6 +30,27 @@ A `.htmlx` file is a whole app written as **real, matched-pair HTML**:
 `<tag>…</tag>`. The root `<app>` sets the window title + size and wraps
 everything in a normalized, cross-platform document. Text nodes are
 **quoted strings** (escaped once).
+
+### Transpile pipeline
+
+Before the Capy grammar runs, two Go preprocessors expand author-facing
+syntax; then `assets/htmlx.capy` parses the result:
+
+```
+.htmlx source
+    │
+    ├─► RewriteHTMLXComponents()   ← <component> → Capy define blocks
+    │
+    ├─► ExpandControlFlow()        ← {#for}/{#if}/{#match} → static HTML
+    │
+    └─► Capy htmlx.capy            ← <app>, elements, void tags, quoted text
+            │
+            ├─► window.yaml
+            └─► static/index.html
+```
+
+The CLI wires this in `appio/cli.go` → `loadHTMLX()`. Demos are regression-tested
+by `go test ./demos/htmlx/`.
 
 ### Source
 
@@ -71,6 +92,11 @@ mismatch is a **transpile error**, not a silently broken page:
 | `<tag attr="v" />` | Self-closing void element (`<input />`, `<br />`, `<hr />`) |
 | `"quoted text"` | A text node — escaped once; one string per line |
 | `attr="value"` | Attributes pass through verbatim |
+| `# …` | Line comment (stripped before parse; handy above `<component>` blocks) |
+
+The root `<app>` attributes must appear in this **fixed order**:
+`title`, then `width`, then `height`. Other attribute orders are not accepted
+by the Capy grammar.
 
 Built-in utility classes ship with the wrapper: `.card`, `.row`, `.grid`,
 `.btn`, `.muted`, `.badge`.
@@ -177,20 +203,21 @@ end
 Inside a `.htmlx` file you can **define your own tags** with a `<component>`
 block, then use them as if they were built in:
 
-- **`props="…"`** — space-separated named attributes, read inside as `{prop}`
+- **`props="…"`** — space-separated named attributes, read inside as `{{ prop }}`
   (escaped automatically)
 - **`<slot></slot>`** — where the nested children go
 - **`void`** — add the bare attribute for a self-closing tag
 
 It's all HTML. No JavaScript, no Capy grammar to learn — `<component>`
-expands to a real tag at transpile time.
+expands to a real tag at transpile time. Interpolation uses the same
+double-brace `{{ … }}` text binding as `.capyx` and the control-flow tags below.
 
 ### Define it once
 
 ```html
 <component name="card" props="title">
   <section class="card">
-    <h3>{title}</h3>
+    <h3>{{ title }}</h3>
     <slot></slot>
   </section>
 </component>
@@ -222,9 +249,9 @@ Add `void`; use the tag self-closed:
 ```html
 <component name="avatar" props="name" void>
   <div class="row">
-    <img src="https://ui-avatars.com/api/?name={name}" width="40" height="40"
+    <img src="https://ui-avatars.com/api/?name={{ name }}" width="40" height="40"
          style="border-radius:50%" />
-    <b>{name}</b>
+    <b>{{ name }}</b>
   </div>
 </component>
 
@@ -233,7 +260,7 @@ Add `void`; use the tag self-closed:
 
 ### Notes
 
-- **Props are escaped.** `{prop}` renders the escaped attribute value, so
+- **Props are escaped.** `{{ prop }}` renders the escaped attribute value, so
   components are XSS-safe by default.
 - **`<slot>` is the body.** Children between the open/close tags render there;
   compose components freely (`<card>` containing `<badge>`).
@@ -247,72 +274,85 @@ dashboard.
 
 ---
 
-## 4. Control flow — `<for>`, `<if>`, `<switch>`
+## 4. Control flow — `{#for}`, `{#if}`, `{#match}`
 
-A `.htmlx` file can use **HTML-native control flow** that runs at transpile
-time. There is no runtime data model — each construct is *evaluated while the
-file compiles*, so the output is plain static HTML. They compose: an `<if>`
-inside a `<for>` sees the loop variable.
+A `.htmlx` file can use **compile-time control flow** written in the same
+**three-brace** directive syntax as [`.capyx`](./capyx-reactive-vhco.md):
+`{#for}`, `{#if}`/`{#elif}`/`{#else}`, and `{#match}`/`{#case}`/`{#default}`,
+each closed with `{/…}`. There is no runtime data model — every construct is
+*evaluated while the file compiles*, so the output is plain static HTML. They
+compose: an `{#if}` inside a `{#for}` sees the loop variable.
 
-Each control tag sits on its **own line** (indent freely). Loop variables and
-values are referenced as `{name}` and substituted as raw text before the page
-is escaped downstream.
+Each directive tag sits on its **own line** (indent freely). Loop variables are
+referenced with the `{{ name }}` text binding and substituted as raw text before
+the page is escaped downstream — the same `{{ … }}` rule components use.
 
-### `<for>` — repeat a block
+### `{#for}` — repeat a block
 
 ```html
-<for each="Home, Docs, About" as="label">
-  <a class="btn" href="#">"{label}"</a>
-</for>
+{#for label in Home, Docs, About}
+  <a class="btn" href="#">"{{ label }}"</a>
+{/for}
 ```
 
-`each` is a comma-separated list; `as` names the loop variable. The block is
-emitted once per item with `{label}` filled in.
+`{#for VAR in A, B, C}` iterates a comma-separated list; `VAR` is the loop
+variable. The block is emitted once per item with `{{ VAR }}` filled in.
 
-### `<if>` / `<else>` — pick a branch
+### `{#if}` / `{#elif}` / `{#else}` — pick a branch
 
 ```html
-<if value="admin" is="admin">
+{#if role == admin}
   <p>"Edit access granted."</p>
-<else>
-  <p>"Read-only."</p>
-</if>
-```
-
-`value` is compared to `is`; the `<else>` branch is optional. To test
-membership against a list, use `in` instead of `is`:
-
-```html
-<if value="{role}" in="admin, editor">
+{#elif role == editor}
   <p>"Can edit."</p>
-</if>
+{#else}
+  <p>"Read-only."</p>
+{/if}
 ```
 
-### `<switch>` — many branches
+Conditions compare with `==` (string equality). To test membership against a
+list, use `in`:
 
 ```html
-<switch value="{role}">
-  <case is="admin">  <p>"Full control."</p>      </case>
-  <case is="editor"> <p>"Create and edit."</p>   </case>
-  <default>          <p>"View only."</p>          </default>
-</switch>
+{#if role in admin, editor}
+  <p>"Can edit."</p>
+{/if}
 ```
 
-The first `<case>` whose `is` equals `value` wins; `<default>` runs if none
-match.
+`{#elif}` and `{#else}` are optional; the first matching branch wins.
+
+### `{#match}` — many branches
+
+```html
+{#match role}
+  {#case admin}
+    <p>"Full control."</p>
+  {#case editor}
+    <p>"Create and edit."</p>
+  {#default}
+    <p>"View only."</p>
+{/match}
+```
+
+The first `{#case}` whose value equals the `{#match}` expression wins;
+`{#default}` runs if none match. A `{#case}` body runs until the next
+`{#case}`, `{#default}`, or `{/match}` — there is no per-case closer.
 
 ### Notes
 
-- **Compile-time only.** The constructs expand during transpilation, so the
+- **Compile-time only.** The directives expand during transpilation, so the
   shipped page is static HTML — no client-side branching or loops.
-- **`{var}` is raw substitution.** It fills in before htmlx escapes quoted text
-  nodes, so `<a href="#">"{label}"</a>` still escapes the text once.
+- **`{{ var }}` is raw substitution.** It fills in before htmlx escapes quoted
+  text nodes, so `<a href="#">"{{ label }}"</a>` still escapes the text once.
+- **Bare names in headers, `{{ }}` in text.** Directive headers reference the
+  loop variable bare (`{#match role}`, `{#if role == admin}`); body text
+  interpolates it as `{{ role }}` — exactly the `.capyx` convention.
 - **Composes with everything.** Nest control flow inside components, inside each
-  other, or wrap component usage in a `<for>`.
+  other, or wrap component usage in a `{#for}`.
 
 See [`demos/htmlx/control.htmlx`](../demos/htmlx/control.htmlx) for a page that
-builds a nav with `<for>`, gates a banner with `<if>`, and renders one card per
-role with a nested `<for>` + `<switch>`.
+builds a nav with `{#for}`, gates a banner with `{#if}`, and renders one card
+per role with a nested `{#for}` + `{#match}`.
 
 ---
 
@@ -344,8 +384,16 @@ mount CounterView with Counter
 is a two-way model. The full format — the three-brace rule, every top-level
 construct, the handler mini-language, capability/provide injection and the
 orchestrator shared store — is documented in
-[**`docs/capyx-reactive-vhco.md`**](./capyx-reactive-vhco.md), with 24 runnable
+[**`docs/capyx-reactive-vhco.md`**](./capyx-reactive-vhco.md), with 25 runnable
 demos in [`demos/capyx/`](../demos/capyx/).
+
+Because `.capyx` components are isolated (dumb views + handlers + mockable
+capabilities), each one can be tested on its own — mounted alone, state
+overridden, services mocked, events fired, expectations asserted — with **no
+browser and no Selenium**. Author scenarios in the `.capytest` format and run
+them with `window test suite.capytest`, or explore a component by hand with
+`window test --ui app.capyx`. See
+[**`docs/capyx-testing.md`**](./capyx-testing.md).
 
 ---
 
@@ -354,6 +402,8 @@ demos in [`demos/capyx/`](../demos/capyx/).
 | | |
 |---|---|
 | `.htmlx` grammar | [`assets/htmlx.capy`](../assets/htmlx.capy) |
+| `.htmlx` component preprocessor | [`infra/htmlx_components.go`](../infra/htmlx_components.go) |
+| `.htmlx` control-flow preprocessor | [`infra/htmlx_controlflow.go`](../infra/htmlx_controlflow.go) |
 | CapyScript grammar | [`assets/capyscript.capy`](../assets/capyscript.capy) |
 | `.capyx` compiler | [`infra/capyx*.go`](../infra) |
 | `.capyx` runtime | [`assets/capyx_runtime.js`](../assets/capyx_runtime.js) |

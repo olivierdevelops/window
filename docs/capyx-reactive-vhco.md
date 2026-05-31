@@ -205,7 +205,7 @@ track the same field, both update from `0` to `1` in lockstep. This is proven by
 
 ---
 
-## 8. The 24 demos
+## 8. The 25 demos
 
 All demos live in [`demos/capyx/`](../demos/capyx) and run with
 `window demos/capyx/<name>.capyx`. They are catalogued small → large in
@@ -237,12 +237,13 @@ All demos live in [`demos/capyx/`](../demos/capyx) and run with
 | 22 | `two_lists` | one component mounted twice, two handlers |
 | 23 | `notes` | capability / provide dependency injection |
 | 24 | `orchestrator` | orchestrator as injectable capability; shared store |
+| 25 | `control` | reactive twin of the static `control.htmlx`: `{#for}` nav, `{#if}` toggle, `{#match}` tabs + role cards |
 
 ### What the tests prove
 
 Run `go test ./demos/capyx/`:
 
-- **`TestCompileAll`** — all 24 compile and mount to non-empty DOM under a Node
+- **`TestCompileAll`** — all 25 compile and mount to non-empty DOM under a Node
   DOM shim (no browser).
 - **`TestCounterReactivity`** — clicking `+`/`-` updates only the bound span.
 - **`TestTodoListReactivity`** — typing + add grows the keyed list; remove

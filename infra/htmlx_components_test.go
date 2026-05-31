@@ -8,7 +8,7 @@ import (
 func TestRewriteHTMLXComponents(t *testing.T) {
 	src := `<component name="card" props="title">
   <section class="card">
-    <h3>{title}</h3>
+    <h3>{{ title }}</h3>
     <slot></slot>
   </section>
 </component>
@@ -42,7 +42,7 @@ func TestRewriteHTMLXComponents(t *testing.T) {
 
 func TestRewriteHTMLXComponentsVoid(t *testing.T) {
 	src := `<component name="avatar" props="name" void>
-  <img src="?n={name}" />
+  <img src="?n={{ name }}" />
 </component>
 <app title="X" width="1" height="1"><avatar name="Ada" /></app>`
 
@@ -76,7 +76,7 @@ func TestRewriteHTMLXComponentsIgnoresCommentsAndText(t *testing.T) {
 }
 
 func TestRewriteHTMLXComponentsRequiresName(t *testing.T) {
-	src := "<component props=\"x\">\n  <b>{x}</b>\n</component>"
+	src := "<component props=\"x\">\n  <b>{{ x }}</b>\n</component>"
 	if _, err := RewriteHTMLXComponents(src); err == nil {
 		t.Fatal("expected an error for a <component> with no name")
 	}

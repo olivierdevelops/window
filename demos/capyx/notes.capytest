@@ -1,0 +1,37 @@
+suite "Notes with a mocked Store capability"
+use ./notes.capyx
+
+# The handler's mount() lifecycle calls store.seed(). Mocking it BEFORE mount
+# lets us test the view against any data we like — no real store, no I/O.
+scenario "renders notes from a mocked store"
+    mock Store.seed returns [{"id":10,"text":"Mocked note"},{"id":11,"text":"Second"}]
+    mount notes
+    expect text "Mocked note"
+    expect text "Second"
+    expect count li 2
+    expect called Store.seed 1
+
+scenario "empty store shows no list items"
+    mock Store.seed returns []
+    mount notes
+    expect count li 0
+
+scenario "adding a note uses store.next for the id"
+    mock Store.seed returns []
+    mock Store.next returns 99
+    mount notes
+    set draft "Write tests"
+    click "add"
+    expect text "Write tests"
+    expect count li 1
+    expect called Store.next 1
+    expect state draft ""
+
+scenario "reload re-reads the store and replaces the list"
+    mock Store.seed returns seq [[{"id":1,"text":"first load"}], [{"id":2,"text":"after reload"}]]
+    mount notes
+    expect text "first load"
+    click "reload from store"
+    expect text "after reload"
+    expect no text "first load"
+    expect called Store.seed 2

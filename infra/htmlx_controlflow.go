@@ -7,24 +7,34 @@ import (
 )
 
 // ExpandControlFlow expands HTML-native, compile-time control flow in a .htmlx
-// source: <for>, <if>/<else>, and <switch>/<case>/<default>. Each construct is
-// evaluated during transpilation (there is no runtime data model) and composes
-// with the others — an <if> inside a <for> sees the loop variable.
+// source using the same three-brace directive syntax as .capyx: {#for}, {#if}
+// /{#elif}/{#else}, and {#match}/{#case}/{#default}. Each construct is evaluated
+// during transpilation (there is no runtime data model) and composes with the
+// others — an {#if} inside a {#for} sees the loop variable.
 //
-//	<for each="Home, About, Contact" as="label">
-//	  <li><a href="#">"{label}"</a></li>
-//	</for>
+//	{#for label in Home, About, Contact}
+//	  <li><a href="#">"{{ label }}"</a></li>
+//	{/for}
 //
-//	<if value="{role}" is="admin"> … <else> … </if>
+//	{#if role == admin}
+//	  …
+//	{#elif role in editor, owner}
+//	  …
+//	{#else}
+//	  …
+//	{/if}
 //
-//	<switch value="{state}">
-//	  <case is="ok"> … </case>
-//	  <default> … </default>
-//	</switch>
+//	{#match state}
+//	  {#case ok}
+//	    …
+//	  {#default}
+//	    …
+//	{/match}
 //
-// Loop variables and props are referenced as {name} and substituted as raw text
-// (htmlx still escapes quoted text nodes downstream). Each control tag must sit
-// on its own line (optionally indented); a <for> mentioned in a comment or a
+// Loop variables are referenced as {{ name }} and substituted as raw text
+// (htmlx still escapes quoted text nodes downstream). Conditions compare with
+// `==` (equality) or `in` (comma-list membership). Each directive tag must sit
+// on its own line (optionally indented); a {#for} mentioned in a comment or a
 // "quoted" text node is left untouched.
 func ExpandControlFlow(source string) (string, error) {
 	nodes, _, err := parseSeq(strings.Split(source, "\n"), 0, nil)
@@ -44,47 +54,45 @@ type cfNode interface{}
 
 type cfText struct{ line string }
 type cfFor struct {
-	each, as string
+	as, each string
 	body     []cfNode
 }
-type cfIf struct {
-	value, is, in   string
-	then_, else_    []cfNode
+type cfCond struct {
+	lhs, op, rhs string // op is "==" or "in"; rhs is a value or comma list
 }
-type cfSwitch struct {
-	value    string
+type cfBranch struct {
+	cond cfCond
+	body []cfNode
+}
+type cfIf struct {
+	branches []cfBranch // the {#if} plus any {#elif}
+	else_    []cfNode
+}
+type cfMatch struct {
+	expr     string
 	cases    []cfCase
 	default_ []cfNode
 }
 type cfCase struct {
-	is   string
-	body []cfNode
+	value string
+	body  []cfNode
 }
 
 // ── line classification ───────────────────────────────────────────────
 
 var (
-	reForOpen     = regexp.MustCompile(`^<for\s+(.*?)\s*>$`)
-	reForClose    = regexp.MustCompile(`^</for>$`)
-	reIfOpen      = regexp.MustCompile(`^<if\s+(.*?)\s*>$`)
-	reIfClose     = regexp.MustCompile(`^</if>$`)
-	reElse        = regexp.MustCompile(`^<else\s*/?>$`)
-	reSwitchOpen  = regexp.MustCompile(`^<switch\s+(.*?)\s*>$`)
-	reSwitchClose = regexp.MustCompile(`^</switch>$`)
-	reCaseOpen    = regexp.MustCompile(`^<case\s+(.*?)\s*>$`)
-	reCaseClose   = regexp.MustCompile(`^</case>$`)
-	reDefaultOpen = regexp.MustCompile(`^<default\s*>$`)
-	reDefaultClose = regexp.MustCompile(`^</default>$`)
-	reAttr        = regexp.MustCompile(`(\w+)\s*=\s*"([^"]*)"`)
+	reForOpen    = regexp.MustCompile(`^\{#for\s+(\w+)\s+in\s+(.+?)\s*\}$`)
+	reForClose   = regexp.MustCompile(`^\{/for\}$`)
+	reIfOpen     = regexp.MustCompile(`^\{#if\s+(.+?)\s*\}$`)
+	reElif       = regexp.MustCompile(`^\{#elif\s+(.+?)\s*\}$`)
+	reElse       = regexp.MustCompile(`^\{#else\}$`)
+	reIfClose    = regexp.MustCompile(`^\{/if\}$`)
+	reMatchOpen  = regexp.MustCompile(`^\{#match\s+(.+?)\s*\}$`)
+	reMatchClose = regexp.MustCompile(`^\{/match\}$`)
+	reCase       = regexp.MustCompile(`^\{#case\s+(.+?)\s*\}$`)
+	reDefault    = regexp.MustCompile(`^\{#default\}$`)
+	reInterp     = regexp.MustCompile(`\{\{\s*(\w+)\s*\}\}`)
 )
-
-func attrMap(s string) map[string]string {
-	m := map[string]string{}
-	for _, kv := range reAttr.FindAllStringSubmatch(s, -1) {
-		m[kv[1]] = kv[2]
-	}
-	return m
-}
 
 // parseSeq reads sibling nodes starting at line i, stopping (without consuming)
 // at the first line matching any regex in stops. Returns the nodes and the
@@ -111,8 +119,8 @@ func parseSeq(lines []string, i int, stops []*regexp.Regexp) ([]cfNode, int, err
 				return nil, 0, err
 			}
 			nodes, i = append(nodes, n), next
-		case reSwitchOpen.MatchString(trimmed):
-			n, next, err := parseSwitch(lines, i)
+		case reMatchOpen.MatchString(trimmed):
+			n, next, err := parseMatch(lines, i)
 			if err != nil {
 				return nil, 0, err
 			}
@@ -126,85 +134,111 @@ func parseSeq(lines []string, i int, stops []*regexp.Regexp) ([]cfNode, int, err
 }
 
 func parseFor(lines []string, i int) (cfNode, int, error) {
-	a := attrMap(reForOpen.FindStringSubmatch(strings.TrimSpace(lines[i]))[1])
-	if a["each"] == "" || a["as"] == "" {
-		return nil, 0, fmt.Errorf("line %d: <for> needs each=\"…\" and as=\"…\"", i+1)
-	}
+	m := reForOpen.FindStringSubmatch(strings.TrimSpace(lines[i]))
 	body, next, err := parseSeq(lines, i+1, []*regexp.Regexp{reForClose})
 	if err != nil {
 		return nil, 0, err
 	}
 	if next >= len(lines) {
-		return nil, 0, fmt.Errorf("line %d: <for> is never closed", i+1)
+		return nil, 0, fmt.Errorf("line %d: {#for} is never closed", i+1)
 	}
-	return cfFor{each: a["each"], as: a["as"], body: body}, next + 1, nil
+	return cfFor{as: m[1], each: m[2], body: body}, next + 1, nil
+}
+
+func parseCond(s string) (cfCond, error) {
+	s = strings.TrimSpace(s)
+	if idx := strings.Index(s, " in "); idx >= 0 {
+		return cfCond{
+			lhs: strings.TrimSpace(s[:idx]),
+			op:  "in",
+			rhs: strings.TrimSpace(s[idx+len(" in "):]),
+		}, nil
+	}
+	if idx := strings.Index(s, "=="); idx >= 0 {
+		return cfCond{
+			lhs: strings.TrimSpace(s[:idx]),
+			op:  "==",
+			rhs: strings.TrimSpace(s[idx+2:]),
+		}, nil
+	}
+	return cfCond{}, fmt.Errorf("condition %q must use `==` or `in`", s)
 }
 
 func parseIf(lines []string, i int) (cfNode, int, error) {
-	a := attrMap(reIfOpen.FindStringSubmatch(strings.TrimSpace(lines[i]))[1])
-	if a["value"] == "" || (a["is"] == "" && a["in"] == "") {
-		return nil, 0, fmt.Errorf("line %d: <if> needs value=\"…\" and is=\"…\" (or in=\"…\")", i+1)
+	start := i
+	branchStops := []*regexp.Regexp{reElif, reElse, reIfClose}
+
+	cond, err := parseCond(reIfOpen.FindStringSubmatch(strings.TrimSpace(lines[i]))[1])
+	if err != nil {
+		return nil, 0, fmt.Errorf("line %d: %v", i+1, err)
 	}
-	then_, next, err := parseSeq(lines, i+1, []*regexp.Regexp{reIfClose, reElse})
+	body, next, err := parseSeq(lines, i+1, branchStops)
 	if err != nil {
 		return nil, 0, err
 	}
-	if next >= len(lines) {
-		return nil, 0, fmt.Errorf("line %d: <if> is never closed", i+1)
-	}
-	var else_ []cfNode
-	if reElse.MatchString(strings.TrimSpace(lines[next])) {
-		else_, next, err = parseSeq(lines, next+1, []*regexp.Regexp{reIfClose})
+	node := cfIf{branches: []cfBranch{{cond: cond, body: body}}}
+	i = next
+
+	for i < len(lines) && reElif.MatchString(strings.TrimSpace(lines[i])) {
+		c, err := parseCond(reElif.FindStringSubmatch(strings.TrimSpace(lines[i]))[1])
+		if err != nil {
+			return nil, 0, fmt.Errorf("line %d: %v", i+1, err)
+		}
+		b, n, err := parseSeq(lines, i+1, branchStops)
 		if err != nil {
 			return nil, 0, err
 		}
-		if next >= len(lines) {
-			return nil, 0, fmt.Errorf("line %d: <if> is never closed", i+1)
-		}
+		node.branches = append(node.branches, cfBranch{cond: c, body: b})
+		i = n
 	}
-	return cfIf{value: a["value"], is: a["is"], in: a["in"], then_: then_, else_: else_}, next + 1, nil
+
+	if i < len(lines) && reElse.MatchString(strings.TrimSpace(lines[i])) {
+		b, n, err := parseSeq(lines, i+1, []*regexp.Regexp{reIfClose})
+		if err != nil {
+			return nil, 0, err
+		}
+		node.else_ = b
+		i = n
+	}
+
+	if i >= len(lines) {
+		return nil, 0, fmt.Errorf("line %d: {#if} is never closed", start+1)
+	}
+	return node, i + 1, nil
 }
 
-func parseSwitch(lines []string, i int) (cfNode, int, error) {
-	a := attrMap(reSwitchOpen.FindStringSubmatch(strings.TrimSpace(lines[i]))[1])
-	if a["value"] == "" {
-		return nil, 0, fmt.Errorf("line %d: <switch> needs value=\"…\"", i+1)
-	}
-	sw := cfSwitch{value: a["value"]}
+func parseMatch(lines []string, i int) (cfNode, int, error) {
+	start := i
+	m := cfMatch{expr: strings.TrimSpace(reMatchOpen.FindStringSubmatch(strings.TrimSpace(lines[i]))[1])}
+	caseStops := []*regexp.Regexp{reCase, reDefault, reMatchClose}
 	i++
 	for i < len(lines) {
 		trimmed := strings.TrimSpace(lines[i])
 		switch {
-		case reSwitchClose.MatchString(trimmed):
-			return sw, i + 1, nil
-		case reCaseOpen.MatchString(trimmed):
-			ca := attrMap(reCaseOpen.FindStringSubmatch(trimmed)[1])
-			body, next, err := parseSeq(lines, i+1, []*regexp.Regexp{reCaseClose})
+		case reMatchClose.MatchString(trimmed):
+			return m, i + 1, nil
+		case reCase.MatchString(trimmed):
+			val := strings.TrimSpace(reCase.FindStringSubmatch(trimmed)[1])
+			body, next, err := parseSeq(lines, i+1, caseStops)
 			if err != nil {
 				return nil, 0, err
 			}
-			if next >= len(lines) {
-				return nil, 0, fmt.Errorf("line %d: <case> is never closed", i+1)
-			}
-			sw.cases = append(sw.cases, cfCase{is: ca["is"], body: body})
-			i = next + 1
-		case reDefaultOpen.MatchString(trimmed):
-			body, next, err := parseSeq(lines, i+1, []*regexp.Regexp{reDefaultClose})
+			m.cases = append(m.cases, cfCase{value: val, body: body})
+			i = next
+		case reDefault.MatchString(trimmed):
+			body, next, err := parseSeq(lines, i+1, caseStops)
 			if err != nil {
 				return nil, 0, err
 			}
-			if next >= len(lines) {
-				return nil, 0, fmt.Errorf("line %d: <default> is never closed", i+1)
-			}
-			sw.default_ = body
-			i = next + 1
+			m.default_ = body
+			i = next
 		case trimmed == "":
 			i++ // tolerate blank lines between cases
 		default:
-			return nil, 0, fmt.Errorf("line %d: only <case>/<default> may appear inside <switch>", i+1)
+			return nil, 0, fmt.Errorf("line %d: only {#case}/{#default} may appear inside {#match}", i+1)
 		}
 	}
-	return nil, 0, fmt.Errorf("line %d: <switch> is never closed", i+1)
+	return nil, 0, fmt.Errorf("line %d: {#match} is never closed", start+1)
 }
 
 // ── rendering ─────────────────────────────────────────────────────────
@@ -218,36 +252,32 @@ func renderNodes(b *strings.Builder, nodes []cfNode, env map[string]string) erro
 		case cfFor:
 			for _, item := range splitList(substVars(v.each, env)) {
 				child := cloneEnv(env)
-				child[v.as] = item
+				child[v.as] = resolve(item, env)
 				if err := renderNodes(b, v.body, child); err != nil {
 					return err
 				}
 			}
 		case cfIf:
-			val := substVars(v.value, env)
-			match := false
-			if v.in != "" {
-				for _, opt := range splitList(substVars(v.in, env)) {
-					if opt == val {
-						match = true
-						break
+			matched := false
+			for _, br := range v.branches {
+				if evalCond(br.cond, env) {
+					if err := renderNodes(b, br.body, env); err != nil {
+						return err
 					}
+					matched = true
+					break
 				}
-			} else {
-				match = val == substVars(v.is, env)
 			}
-			if match {
-				if err := renderNodes(b, v.then_, env); err != nil {
+			if !matched {
+				if err := renderNodes(b, v.else_, env); err != nil {
 					return err
 				}
-			} else if err := renderNodes(b, v.else_, env); err != nil {
-				return err
 			}
-		case cfSwitch:
-			val := substVars(v.value, env)
+		case cfMatch:
+			val := resolve(v.expr, env)
 			done := false
 			for _, c := range v.cases {
-				if substVars(c.is, env) == val {
+				if resolve(c.value, env) == val {
 					if err := renderNodes(b, c.body, env); err != nil {
 						return err
 					}
@@ -265,11 +295,44 @@ func renderNodes(b *strings.Builder, nodes []cfNode, env map[string]string) erro
 	return nil
 }
 
-func substVars(s string, env map[string]string) string {
-	for k, val := range env {
-		s = strings.ReplaceAll(s, "{"+k+"}", val)
+// evalCond evaluates a compile-time condition. `==` is string equality; `in`
+// tests membership against a comma-separated list. Both sides resolve loop
+// variables (bare identifiers / {{ name }}) against the environment, falling
+// back to the literal token.
+func evalCond(c cfCond, env map[string]string) bool {
+	lhs := resolve(c.lhs, env)
+	if c.op == "in" {
+		for _, opt := range splitList(substVars(c.rhs, env)) {
+			if resolve(opt, env) == lhs {
+				return true
+			}
+		}
+		return false
 	}
-	return s
+	return lhs == resolve(c.rhs, env)
+}
+
+// resolve turns a directive-header operand into its value: a bare loop
+// variable becomes its bound value, {{ name }} is interpolated, and anything
+// else is treated as a literal.
+func resolve(tok string, env map[string]string) string {
+	tok = strings.TrimSpace(tok)
+	if v, ok := env[tok]; ok {
+		return v
+	}
+	return substVars(tok, env)
+}
+
+// substVars replaces {{ name }} text bindings with their bound value, leaving
+// unbound bindings untouched.
+func substVars(s string, env map[string]string) string {
+	return reInterp.ReplaceAllStringFunc(s, func(match string) string {
+		name := reInterp.FindStringSubmatch(match)[1]
+		if v, ok := env[name]; ok {
+			return v
+		}
+		return match
+	})
 }
 
 func splitList(s string) []string {

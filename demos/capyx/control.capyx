@@ -1,0 +1,76 @@
+app "Control Flow" 520x520
+
+component control
+  <div class="col wrap">
+    <h1>Reactive control flow</h1>
+
+    <p class="muted">A for-loop builds the nav; clicking a tab selects it.</p>
+    <nav class="row">
+      {#for label in pages}
+        <a class="btn" class:active={page == label} on:click={ page = label }>{{ label }}</a>
+      {/for}
+    </nav>
+
+    <p class="muted">An if-statement picks a branch from live state. Toggle it:</p>
+    <button class="pill" on:click={toggleAdmin}>
+      {#if admin}I am an admin{#else}Read-only{/if}
+    </button>
+    {#if admin}
+      <p class="badge ok">"You are an admin — edit access granted."</p>
+    {#else}
+      <p class="badge">"Read-only access."</p>
+    {/if}
+
+    <p class="muted">match on the active tab:</p>
+    {#match page}
+      {#case "Home"}
+        <p>Welcome home. Pick a section above.</p>
+      {#case "Docs"}
+        <p>The docs explain every directive.</p>
+      {#case "About"}
+        <p>A tiny reactive control-flow demo.</p>
+      {#default}
+        <p class="muted">Say hello on the Contact tab.</p>
+    {/match}
+
+    <p class="muted">for + match together: one card per role.</p>
+    <div class="grid">
+      {#for role in roles}
+        <section class="card" class:active={role == selected} on:click={ selected = role }>
+          <h3>{{ role }}</h3>
+          {#match role}
+            {#case "admin"}
+              <p>Full control of the workspace.</p>
+            {#case "editor"}
+              <p>Can create and edit content.</p>
+            {#default}
+              <p>Can view published pages.</p>
+          {/match}
+        </section>
+      {/for}
+    </div>
+    <p class="muted">Selected role: <strong>{{ selected }}</strong></p>
+  </div>
+  <style>
+    .wrap{gap:10px}
+    .badge{padding:6px 10px;border-radius:8px;background:#f0f0f7}
+    .badge.ok{background:#e6f7ec;color:#1b7a3d}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .card{background:#f0f0f7;border:1px solid #e6e6ef;border-radius:12px;padding:12px;cursor:pointer}
+    .card.active{border-color:#7c7cff;background:#fff}
+    .active{background:#7c7cff;color:#fff;border-color:#7c7cff}
+  </style>
+end
+
+handler control
+  state page = "Home"
+  state pages = ["Home", "Docs", "About", "Contact"]
+  state admin = true
+  state roles = ["admin", "editor", "guest"]
+  state selected = "admin"
+  on toggleAdmin()
+    admin = !admin
+  end
+end
+
+mount control

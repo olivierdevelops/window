@@ -13,13 +13,13 @@ import (
 //
 //	<component name="card" props="title">
 //	  <section class="card">
-//	    <h3>{title}</h3>
+//	    <h3>{{ title }}</h3>
 //	    <slot></slot>
 //	  </section>
 //	</component>
 //
 // and then use it like any built-in tag: <card title="Welcome">…</card>.
-// Inside a definition body, {prop} interpolates an escaped prop value and
+// Inside a definition body, {{ prop }} interpolates an escaped prop value and
 // <slot></slot> marks where nested children go. Add the bare `void` attribute
 // for a self-closing tag (<avatar name="Ada" />).
 //
@@ -105,12 +105,14 @@ func componentToDefine(attrs, body string) (string, error) {
 	return strings.Join(lines, "\n"), nil
 }
 
-// rewriteBody turns {prop} into ${escapeHtml prop}, <slot></slot> into ${body},
-// then dedents and re-indents the template body to 8 spaces.
+// rewriteBody turns {{ prop }} into ${escapeHtml prop}, <slot></slot> into
+// ${body}, then dedents and re-indents the template body to 8 spaces.
 func rewriteBody(body string, props []string) string {
 	body = slotRE.ReplaceAllLiteralString(body, "${body}")
 	for _, p := range props {
-		body = strings.ReplaceAll(body, "{"+p+"}", "${escapeHtml "+p+"}")
+		// {{ prop }} with optional surrounding whitespace.
+		re := regexp.MustCompile(`\{\{\s*` + regexp.QuoteMeta(p) + `\s*\}\}`)
+		body = re.ReplaceAllString(body, "${escapeHtml "+p+"}")
 	}
 
 	raw := strings.Split(body, "\n")

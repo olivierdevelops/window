@@ -11,13 +11,35 @@ window [flags | path]
 ### Run an app
 
 ```bash
-window demos/hello/window.yaml    # from YAML config
-window demos/hello/window.json    # from JSON config
-window /path/to/document.md       # view a single file
-window /path/to/image.png         # view a single file
+window demos/hello/window.yaml       # from YAML config
+window demos/hello/window.json       # from JSON config
+window demos/htmlx/hello.htmlx         # matched-pair HTML (transpiled)
+window demos/capy/counter.window       # .window app language (transpiled)
+window demos/capyx/counter.capyx       # reactive VHCO app (compiled)
+window demos/cs/fib.cs                 # CapyScript → JavaScript (transpiled)
+window /path/to/document.md            # view a single file
+window /path/to/image.png              # view a single file
 ```
 
-When given a path that is not `.yaml` or `.json`, `webview_gui` creates a minimal single-file viewer config.
+**Authoring formats** (`.htmlx`, `.window`, `.capyx`, `.cs`) are transpiled or
+compiled into a temp `window.yaml` + `static/` tree, then run like any other app.
+See [authoring-formats.md](./authoring-formats.md).
+
+When given a path that is not a recognized config or authoring format,
+`webview_gui` creates a minimal single-file viewer config.
+
+### `test` — test components in isolation
+
+Run `.capyx` component tests with no browser and no Selenium.
+
+```bash
+window test demos/capyx/counter.capytest   # run a suite headlessly (CI; exits non-zero on failure)
+window test --ui demos/capyx/counter.capyx  # open the interactive Test Bench
+```
+
+The headless runner needs Node.js on `PATH`; the `--ui` bench runs in the
+webview and does not. See [capyx-testing.md](./capyx-testing.md) for the
+`.capytest` format and the bench walkthrough.
 
 ### `--version` / `-v`
 

@@ -3,35 +3,32 @@
 
   <p class="muted">"A for-loop builds the nav; each label is a loop variable."</p>
   <nav class="row">
-    <for each="Home, Docs, About, Contact" as="label">
-      <a class="btn" href="#">"{label}"</a>
-    </for>
+    {#for label in Home, Docs, About, Contact}
+      <a class="btn" href="#">"{{ label }}"</a>
+    {/for}
   </nav>
 
   <p class="muted">"An if-statement picks a branch at transpile time."</p>
-  <if value="admin" is="admin">
+  {#if admin == admin}
     <p class="badge">"You are an admin — edit access granted."</p>
-  <else>
+  {#else}
     <p class="badge">"Read-only access."</p>
-  </if>
+  {/if}
 
-  <p class="muted">"for + switch together: one card per role."</p>
+  <p class="muted">"for + match together: one card per role."</p>
   <div class="grid">
-    <for each="admin, editor, guest" as="role">
+    {#for role in admin, editor, guest}
       <section class="card">
-        <h3>"{role}"</h3>
-        <switch value="{role}">
-          <case is="admin">
+        <h3>"{{ role }}"</h3>
+        {#match role}
+          {#case admin}
             <p>"Full control of the workspace."</p>
-          </case>
-          <case is="editor">
+          {#case editor}
             <p>"Can create and edit content."</p>
-          </case>
-          <default>
+          {#default}
             <p>"Can view published pages."</p>
-          </default>
-        </switch>
+        {/match}
       </section>
-    </for>
+    {/for}
   </div>
 </app>

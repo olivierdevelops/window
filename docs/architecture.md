@@ -67,6 +67,9 @@ Concrete implementations. Each file is independent and has no domain knowledge.
 | `log.go` | `LogMiddleware` — HTTP request logging |
 | `cert.go` | `EnsureLocalCert`, `TrustCert`, `CopyFile`, `CopyDir` |
 | `renderer.go` | `StringToHTML`, `RenderToHTML` — Markdown → HTML |
+| `htmlx_components.go` | `RewriteHTMLXComponents` — `<component>` → Capy `define` blocks |
+| `htmlx_controlflow.go` | `ExpandControlFlow` — compile-time `{#for}/{#if}/{#match}` |
+| `capyx*.go` | `.capyx` reactive VHCO compiler |
 | `mac_app.go` (darwin) | `BuildMacApp` — `.app` bundle builder |
 | `native/fs.go` | `ReadFile`, `WriteFile`, `ReadDir`, `WatchFile` (fsnotify) |
 | `native/os.go` | `ExecCommand`, `GetEnv`, `Platform`, `GetOSInfo` |
@@ -103,7 +106,7 @@ CLI argument handling and config loading. Talks to `infra` for `BuildMacApp`, ta
 
 | File | Responsibility |
 |------|---------------|
-| `cli.go` | `ParseCLI()` — flags, `--version`, `--init`, `--mac-app` |
+| `cli.go` | `ParseCLI()` — flags, `--version`, `--init`, `--mac-app`; dispatches `.htmlx`, `.window`, `.capyx`, `.cs` to transpilers |
 | `config_loader.go` | `LoadApp()`, `LoadAppForContentView()` |
 
 ### `assets/`
@@ -111,6 +114,10 @@ All embedded static files. `embed.go` declares Go variables for each asset.
 
 | Asset | Used by |
 |-------|---------|
+| `htmlx.capy` | `.htmlx` — matched-pair HTML app language |
+| `window.capy` | `.window` — declarative app language |
+| `capyscript.capy` | `.cs` — CapyScript → JavaScript |
+| `capyx_runtime.js` | `.capyx` — fine-grained signals runtime |
 | `backend.js` | Injected into every window — provides `BACKEND` class and `console` forwarding |
 | `browser.js` | Browser mode — shadow-DOM overlay template |
 | `native_fs.js` | `native_features: [fs]` — exposes `window.NATIVE.fs.*` |

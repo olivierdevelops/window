@@ -21,7 +21,7 @@ exercised for real reactivity by [`generate_test.go`](./generate_test.go):
 go test ./demos/capyx/
 ```
 
-## The 24 demos, small → large
+## The 25 demos, small → large
 
 | # | Demo | Concepts |
 |---|------|----------|
@@ -49,10 +49,11 @@ go test ./demos/capyx/
 | 22 | `two_lists` | **Option-1**: one component mounted twice, two handlers |
 | 23 | `notes` | **capability / provide** dependency injection |
 | 24 | `orchestrator` | **orchestrator** as injectable capability; shared store across two panels |
+| 25 | `control` | reactive `{#for}` nav, `{#if}` toggle, `{#match}` tabs + role cards — the runtime twin of `demos/htmlx/control.htmlx` |
 
 ## What the tests prove
 
-- **`TestCompileAll`** — all 24 compile and mount to non-empty DOM.
+- **`TestCompileAll`** — all 25 compile and mount to non-empty DOM.
 - **`TestCounterReactivity`** — clicking `+`/`-` updates only the bound span.
 - **`TestTodoListReactivity`** — typing + add grows the keyed list; remove
   shrinks it.

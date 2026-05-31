@@ -61,7 +61,8 @@
   .scroll{overflow-x:auto}
 
   .diagram{margin:20px 0;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px}
-  .demos{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+  .demos{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:18px 0}
+  @media(max-width:960px){.demos{grid-template-columns:1fr 1fr}}
   @media(max-width:760px){.demos{grid-template-columns:1fr}}
   .demo{background:var(--bg2);border:1px solid var(--border);border-radius:13px;overflow:hidden}
   .demo .dh{padding:14px 16px 4px}
@@ -125,24 +126,31 @@
     <p class="lead-p">A single Capy function opens on <code>&lt;</code> + a captured tag
       <em>name</em> and closes on the sequence <code>&lt;/</code> <em>name</em> <code>&gt;</code>.
       Because the closer <strong>references the captured name</strong>, <code>&lt;/div&gt;</code>
-      closes only <code>&lt;div&gt;</code> — and a mismatch is a parse error.</p>
+      closes only <code>&lt;div&gt;</code> — and a mismatch is a parse error. Before Capy runs,
+      Go preprocessors expand <code>&lt;component&gt;</code> definitions and compile-time
+      <code>{#for}</code> / <code>{#if}</code> / <code>{#match}</code> directives.</p>
     <div class="diagram">
-      <svg viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A .htmlx source is parsed by Capy sequence closers into window.yaml and static/index.html, then run by the window binary">
+      <svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A .htmlx source is preprocessed, parsed by Capy sequence closers into window.yaml and static/index.html, then run by the window binary">
         <defs><marker id="ah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#7c7cff"/></marker></defs>
-        <rect x="14" y="64" width="150" height="74" rx="11" fill="#161b22" stroke="#7c7cff"/>
-        <text x="89" y="98" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#c8c8ff">app.htmlx</text>
-        <text x="89" y="118" text-anchor="middle" font-family="system-ui" font-size="11" fill="#8b949e">&lt;tag&gt;…&lt;/tag&gt;</text>
-        <line x1="170" y1="101" x2="226" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
-        <rect x="232" y="70" width="120" height="62" rx="11" fill="#1c2128" stroke="#30363d"/>
-        <text x="292" y="96" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">Capy</text>
-        <text x="292" y="114" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6e7681">seq closers</text>
-        <line x1="358" y1="101" x2="414" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
-        <rect x="420" y="60" width="180" height="40" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="510" y="85" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#3fb950">window.yaml</text>
-        <rect x="420" y="108" width="180" height="40" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="510" y="133" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#c9d1d9">static/index.html</text>
-        <line x1="606" y1="101" x2="662" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
-        <rect x="668" y="64" width="138" height="74" rx="11" fill="#1c2128" stroke="#7c7cff"/>
-        <text x="737" y="96" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">window</text>
-        <text x="737" y="116" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6e7681">native webview</text>
+        <rect x="10" y="64" width="130" height="74" rx="11" fill="#161b22" stroke="#7c7cff"/>
+        <text x="75" y="98" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#c8c8ff">app.htmlx</text>
+        <text x="75" y="118" text-anchor="middle" font-family="system-ui" font-size="10" fill="#8b949e">&lt;tag&gt;…&lt;/tag&gt;</text>
+        <line x1="144" y1="101" x2="186" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="192" y="70" width="118" height="62" rx="11" fill="#1c2128" stroke="#30363d"/>
+        <text x="251" y="94" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#e6edf3">Go</text>
+        <text x="251" y="110" text-anchor="middle" font-family="system-ui" font-size="9" fill="#6e7681">components +</text>
+        <text x="251" y="122" text-anchor="middle" font-family="system-ui" font-size="9" fill="#6e7681">control flow</text>
+        <line x1="314" y1="101" x2="356" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="362" y="70" width="110" height="62" rx="11" fill="#1c2128" stroke="#30363d"/>
+        <text x="417" y="96" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">Capy</text>
+        <text x="417" y="114" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6e7681">seq closers</text>
+        <line x1="476" y1="101" x2="518" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="524" y="60" width="170" height="40" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="609" y="85" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#3fb950">window.yaml</text>
+        <rect x="524" y="108" width="170" height="40" rx="8" fill="#0a0d12" stroke="#30363d"/><text x="609" y="133" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#c9d1d9">static/index.html</text>
+        <line x1="698" y1="101" x2="740" y2="101" stroke="#7c7cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        <rect x="746" y="64" width="130" height="74" rx="11" fill="#1c2128" stroke="#7c7cff"/>
+        <text x="811" y="96" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#e6edf3">window</text>
+        <text x="811" y="116" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6e7681">native webview</text>
       </svg>
     </div>
     <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>assets/htmlx.capy (the whole tag grammar)</div>
@@ -208,11 +216,12 @@ matches token "&lt;/"
     <div class="scroll"><table class="sheet">
       <thead><tr><th>Form</th><th>What it is</th></tr></thead>
       <tbody>
-        <tr><td><code>&lt;app title="…" width="…" height="…"&gt; … &lt;/app&gt;</code></td><td>Root: window title + size; wraps the body in a full document</td></tr>
+        <tr><td><code>&lt;app title="…" width="…" height="…"&gt; … &lt;/app&gt;</code></td><td>Root: window title + size; wraps the body in a full document. Attributes must appear in this order: <code>title</code>, <code>width</code>, <code>height</code>.</td></tr>
         <tr><td><code>&lt;tag attr="v"&gt; … &lt;/tag&gt;</code></td><td>Any matched-pair element; nests freely, closer must match</td></tr>
         <tr><td><code>&lt;tag attr="v" /&gt;</code></td><td>Self-closing void element (<code>&lt;input /&gt;</code>, <code>&lt;br /&gt;</code>, <code>&lt;hr /&gt;</code>)</td></tr>
         <tr><td><code>"quoted text"</code></td><td>A text node — escaped once. Put literal markup like <code>"&lt;p&gt;"</code> inside <code>&lt;code&gt;</code></td></tr>
         <tr><td><code>attr="value"</code></td><td>Attributes pass through verbatim onto the tag</td></tr>
+        <tr><td><code># …</code></td><td>Line comment — stripped before parse; handy above <code>&lt;component&gt;</code> blocks</td></tr>
       </tbody>
     </table></div>
     <h3>Built-in utility classes</h3>
@@ -255,14 +264,15 @@ matches token "&lt;/"
     <h2>Define your own HTML tags</h2>
     <p class="lead-p">A <code>.htmlx</code> source can <strong>define new tags</strong> with a
       <code>&lt;component&gt;</code> block, then use them as if they were built in. It's all HTML:
-      <code>props="…"</code> declares named attributes you read as <code>{prop}</code> (escaped
-      automatically), and <code>&lt;slot&gt;</code> marks where nested children go. No JavaScript,
+      <code>props="…"</code> declares named attributes you read as <code>{{ prop }}</code> (escaped
+      automatically, the same double-brace text binding as <code>.capyx</code>), and
+      <code>&lt;slot&gt;</code> marks where nested children go. No JavaScript,
       no grammar to learn — <code>&lt;component&gt;</code> expands to a real tag at transpile time.</p>
     <div class="cols">
       <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>define it once — pure HTML</div>
 <pre><code>&lt;component name="card" props="title"&gt;
   &lt;section class="card"&gt;
-    &lt;h3&gt;{title}&lt;/h3&gt;
+    &lt;h3&gt;{{ title }}&lt;/h3&gt;
     &lt;slot&gt;&lt;/slot&gt;
   &lt;/section&gt;
 &lt;/component&gt;</code></pre></div>
@@ -290,24 +300,29 @@ matches token "&lt;/"
   <!-- CONTROL FLOW -->
   <section id="control">
     <div class="eyebrow">compile-time</div>
-    <h2>Control flow — loop, branch, switch</h2>
-    <p class="lead-p">Three HTML-native tags run <strong>at transpile time</strong>: <code>&lt;for&gt;</code>,
-      <code>&lt;if&gt;</code>/<code>&lt;else&gt;</code>, and <code>&lt;switch&gt;</code>. There's no runtime
-      data model — each construct is evaluated while the file compiles, so the shipped page is plain
-      static HTML. They compose: an <code>&lt;if&gt;</code> inside a <code>&lt;for&gt;</code> sees the
-      loop variable as <code>{name}</code>.</p>
+    <h2>Control flow — loop, branch, match</h2>
+    <p class="lead-p">The same <strong>three-brace</strong> directives as
+      <a href="capyx.html"><code>.capyx</code></a> run <strong>at transpile time</strong>:
+      <code>{#for}</code>, <code>{#if}</code>/<code>{#elif}</code>/<code>{#else}</code>, and
+      <code>{#match}</code>/<code>{#case}</code>/<code>{#default}</code>, each closed with
+      <code>{/…}</code>. There's no runtime data model — each construct is evaluated while the file
+      compiles, so the shipped page is plain static HTML. They compose: an <code>{#if}</code> inside a
+      <code>{#for}</code> sees the loop variable as <code>{{ name }}</code>.</p>
     <div class="cols">
-      <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>loop, branch &amp; switch</div>
-<pre><code>&lt;for each="admin, editor, guest" as="role"&gt;
+      <div class="code"><div class="cap"><span class="d" style="background:#7c7cff"></span>loop, branch &amp; match</div>
+<pre><code>{#for role in admin, editor, guest}
   &lt;section class="card"&gt;
-    &lt;h3&gt;"{role}"&lt;/h3&gt;
-    &lt;switch value="{role}"&gt;
-      &lt;case is="admin"&gt;  &lt;p&gt;"Full control."&lt;/p&gt;   &lt;/case&gt;
-      &lt;case is="editor"&gt; &lt;p&gt;"Create &amp; edit."&lt;/p&gt;  &lt;/case&gt;
-      &lt;default&gt;          &lt;p&gt;"View only."&lt;/p&gt;      &lt;/default&gt;
-    &lt;/switch&gt;
+    &lt;h3&gt;"{{ role }}"&lt;/h3&gt;
+    {#match role}
+      {#case admin}
+        &lt;p&gt;"Full control."&lt;/p&gt;
+      {#case editor}
+        &lt;p&gt;"Create &amp; edit."&lt;/p&gt;
+      {#default}
+        &lt;p&gt;"View only."&lt;/p&gt;
+    {/match}
   &lt;/section&gt;
-&lt;/for&gt;</code></pre></div>
+{/for}</code></pre></div>
       <div class="out" style="margin:0;border-radius:0;border-left:none;border-top:1px solid var(--border)"><span class="lbl">EXPANDS TO</span>
 <code>&lt;section class="card"&gt;&lt;h3&gt;admin&lt;/h3&gt;
   &lt;p&gt;Full control.&lt;/p&gt;&lt;/section&gt;
@@ -316,10 +331,10 @@ matches token "&lt;/"
 &lt;section class="card"&gt;&lt;h3&gt;guest&lt;/h3&gt;
   &lt;p&gt;View only.&lt;/p&gt;&lt;/section&gt;</code></div>
     </div>
-    <p><code>&lt;for each="a, b, c" as="x"&gt;</code> repeats its body once per comma-separated item;
-      <code>&lt;if value="…" is="…"&gt;</code> picks a branch (use <code>in="a, b"</code> to test list
-      membership, and an optional <code>&lt;else&gt;</code>); <code>&lt;switch value="…"&gt;</code> runs the
-      first matching <code>&lt;case is="…"&gt;</code> or the <code>&lt;default&gt;</code>. Each tag sits on its
+    <p><code>{#for x in a, b, c}</code> repeats its body once per comma-separated item;
+      <code>{#if x == y}</code> picks a branch (use <code>{#if x in a, b}</code> to test list
+      membership, plus optional <code>{#elif}</code> / <code>{#else}</code>); <code>{#match v}</code> runs the
+      first matching <code>{#case …}</code> or the <code>{#default}</code>. Each directive sits on its
       own line. The <a href="https://github.com/olivierdevelops/window/blob/main/demos/htmlx/control.htmlx">control.htmlx</a>
       demo builds a nav, a banner and a role grid this way.</p>
     <span class="run">window demos/htmlx/control.htmlx</span>
@@ -330,6 +345,16 @@ matches token "&lt;/"
     <div class="eyebrow">see it run</div>
     <h2>Demos</h2>
     <div class="demos">
+      <div class="demo">
+        <div class="dh"><b>hello</b><p>The smallest possible app.</p>
+          <span class="tag">minimal</span></div>
+        <div class="code"><div class="cap">hello.htmlx</div>
+<pre><code>&lt;app title="Hello" width="460" height="320"&gt;
+  &lt;h1&gt;"Hello, window"&lt;/h1&gt;
+  &lt;a class="btn" href="#"&gt;"Docs"&lt;/a&gt;
+&lt;/app&gt;</code></pre></div>
+        <span class="run">window demos/htmlx/hello.htmlx</span>
+      </div>
       <div class="demo">
         <div class="dh"><b>landing</b><p>Cards in a responsive grid, badges, buttons.</p>
           <span class="tag">grid</span><span class="tag">cards</span></div>
@@ -374,6 +399,27 @@ matches token "&lt;/"
 &lt;span class="badge"&gt;"1843"&lt;/span&gt;</code></pre></div>
         <span class="run">window demos/htmlx/profile.htmlx</span>
       </div>
+      <div class="demo">
+        <div class="dh"><b>components</b><p>Define your own tags with <code>&lt;component&gt;</code>.</p>
+          <span class="tag">component</span><span class="tag">slot</span></div>
+        <div class="code"><div class="cap">components.htmlx</div>
+<pre><code>&lt;component name="card" props="title"&gt;
+  &lt;section class="card"&gt;
+    &lt;h3&gt;{{ title }}&lt;/h3&gt;&lt;slot&gt;&lt;/slot&gt;
+  &lt;/section&gt;
+&lt;/component&gt;
+&lt;card title="Welcome"&gt;&lt;p&gt;"…"&lt;/p&gt;&lt;/card&gt;</code></pre></div>
+        <span class="run">window demos/htmlx/components.htmlx</span>
+      </div>
+      <div class="demo">
+        <div class="dh"><b>control</b><p>Compile-time <code>{#for}</code>, <code>{#if}</code>, <code>{#match}</code>.</p>
+          <span class="tag">for</span><span class="tag">if</span><span class="tag">match</span></div>
+        <div class="code"><div class="cap">control.htmlx</div>
+<pre><code>{#for label in Home, Docs, About}
+  &lt;a class="btn" href="#"&gt;"{{ label }}"&lt;/a&gt;
+{/for}</code></pre></div>
+        <span class="run">window demos/htmlx/control.htmlx</span>
+      </div>
     </div>
   </section>
 
@@ -399,8 +445,11 @@ matches token "&lt;/"
     <div class="eyebrow">go deeper</div>
     <h2>Learn more</h2>
     <ul>
-      <li><a href="https://github.com/olivierdevelops/window/blob/main/assets/htmlx.capy">assets/htmlx.capy</a> — the whole format, defined as a Capy library</li>
-      <li><a href="https://github.com/olivierdevelops/window/tree/main/demos/htmlx">demos/htmlx/</a> — every <code>.htmlx</code> demo above</li>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/authoring-formats.md">docs/authoring-formats.md</a> — full format reference (components, control flow, pipeline)</li>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/assets/htmlx.capy">assets/htmlx.capy</a> — the Capy grammar (elements, void tags, document wrapper)</li>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/infra/htmlx_components.go">infra/htmlx_components.go</a> — <code>&lt;component&gt;</code> preprocessor</li>
+      <li><a href="https://github.com/olivierdevelops/window/blob/main/infra/htmlx_controlflow.go">infra/htmlx_controlflow.go</a> — compile-time control-flow preprocessor</li>
+      <li><a href="https://github.com/olivierdevelops/window/tree/main/demos/htmlx">demos/htmlx/</a> — all seven <code>.htmlx</code> demos above</li>
       <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/capy-angle-bracket-html-now-supported.md">capy-angle-bracket-html-now-supported.md</a> — how sequence closers make this work</li>
       <li><a href="window-lang.html">The <code>.window</code> language</a> — the interactive, stateful sibling</li>
       <li><a href="https://github.com/olivierdevelops/capy">Capy</a> — the transpiler engine</li>

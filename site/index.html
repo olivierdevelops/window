@@ -599,7 +599,9 @@ send calc math into result args { a: state.a, b: state.b, op: 'add' }</code></pr
       <p class="hint" style="margin-top:8px">New: <a href="capyx.html"><code>.capyx</code></a> is a single-file
         <b>reactive VHCO</b> format — dumb components, state handlers, capability/provide dependency
         injection and an optional orchestrator, all compiled to a fine-grained <b>signals runtime</b>
-        that does surgical DOM updates. <a href="capyx.html">See all 24 <code>.capyx</code> demos →</a></p>
+        that does surgical DOM updates — and because components are isolated, you can
+        <a href="capyx.html#testing">test them with no browser or Selenium</a>.
+        <a href="capyx.html">See all 25 <code>.capyx</code> demos →</a></p>
       <p class="hint" style="margin-top:8px">Or skip the widgets and author a page as matched-pair
         angle-bracket HTML — <code>&lt;tag&gt;…&lt;/tag&gt;</code>, nesting validated at transpile time.
         See the <a href="htmlx.html">.htmlx format</a>. Need plain algorithmic logic instead?
@@ -910,6 +912,7 @@ appio/         CLI + config loading</code></pre></div>
       <div class="eyebrow">reference</div>
       <h2>Docs &amp; links</h2>
       <ul>
+        <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/authoring-formats.md">Authoring formats</a> — `.htmlx`, `.cs`, `.capyx`, `.window`</li>
         <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/device-capabilities.md">Device capabilities</a> — camera, mic, speech, screen, input</li>
         <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/native-features.md">Native features</a> — fs, os, dialogs, canvas</li>
         <li><a href="https://github.com/olivierdevelops/window/blob/main/docs/configuration.md">Configuration</a> — every <code>window.yaml</code> field</li>

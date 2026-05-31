@@ -128,6 +128,37 @@ A static demo app.
 
 ---
 
+## `htmlx/*` — Matched-pair HTML apps (7 demos)
+
+**Format:** `.htmlx` · **Backend:** none (static HTML)
+
+Whole desktop apps written as **real, matched-pair HTML**
+(`<tag>…</tag>`). The embedded `assets/htmlx.capy` library parses markup
+with Capy sequence closers (nesting validated at transpile time); Go
+preprocessors add `<component>` custom tags and compile-time
+`{#for}` / `{#if}` / `{#match}` control flow (the same three-brace syntax as `.capyx`).
+
+```bash
+window demos/htmlx/hello.htmlx
+window demos/htmlx/components.htmlx
+window demos/htmlx/control.htmlx
+```
+
+| File | Shows |
+|------|-------|
+| `hello.htmlx` | Minimal app — smallest `.htmlx` |
+| `landing.htmlx` | Cards in a responsive grid; badges; buttons |
+| `article.htmlx` | Deep inline nesting (`<em>`, `<a>`, `<strong>`, `<blockquote>`) |
+| `profile.htmlx` | Lists, badges, a card layout |
+| `signup.htmlx` | Self-closing void elements: `<input />`, `<br />`, a `<form>` |
+| `components.htmlx` | `<component>` kit: `<card>`, `<stat>`, `<badge>`, void `<avatar/>` |
+| `control.htmlx` | Compile-time `{#for}` nav, `{#if}/{#else}` banner, nested `{#for}` + `{#match}` |
+
+Format reference: [`docs/authoring-formats.md`](./authoring-formats.md). Public guide:
+[site/htmlx.html](../site/htmlx.html). Tested by `go test ./demos/htmlx/`.
+
+---
+
 ## `capyx/*` — Reactive VHCO apps (24 demos)
 
 **Format:** `.capyx` · **Backend:** none (fine-grained signals runtime)
